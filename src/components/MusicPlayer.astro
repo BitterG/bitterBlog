@@ -1,0 +1,179 @@
+<div class="music-player" id="musicPlayer">
+  <button class="music-toggle" id="musicToggle" aria-label="音乐播放器">
+    <img src="/img/momo_maodie.webp" alt="播放器" class="music-toggle-img" id="musicToggleImg" />
+  </button>
+
+  <div class="music-card" id="musicCard">
+    <div class="music-card-header">
+      <span class="music-card-title caption-mono" id="musicTitle">哈基米 FM</span>
+      <button class="music-card-close" id="musicClose">✕</button>
+    </div>
+    <div class="music-card-body">
+      <div class="music-controls">
+        <button class="music-btn" id="musicPrev">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+        </button>
+        <button class="music-btn music-btn-play" id="musicPlay">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"/></svg>
+        </button>
+        <button class="music-btn" id="musicNext">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+        </button>
+      </div>
+      <div class="music-progress">
+        <div class="music-progress-fill" id="musicProgressFill"></div>
+      </div>
+      <div class="music-volume">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        <input type="range" class="music-volume-slider" id="musicVolume" min="0" max="100" value="15" />
+      </div>
+      <div class="music-meta" id="musicMeta">
+        <a href="#" id="musicBvid" target="_blank" class="music-meta-link"></a>
+        <span class="music-meta-source">音频来源 Bilibili</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    var playlist = [];
+    var currentIdx = -1;
+    var isPlaying = false;
+    var audio = new Audio();
+    audio.preload = 'none';
+
+    var musicCard = document.getElementById('musicCard');
+    var musicToggle = document.getElementById('musicToggle');
+    var musicClose = document.getElementById('musicClose');
+    var musicPlay = document.getElementById('musicPlay');
+    var musicPrev = document.getElementById('musicPrev');
+    var musicNext = document.getElementById('musicNext');
+    var musicTitle = document.getElementById('musicTitle');
+    var musicProgressFill = document.getElementById('musicProgressFill');
+    var musicVolume = document.getElementById('musicVolume');
+    var musicBvid = document.getElementById('musicBvid');
+    var open = false;
+
+    fetch('/playlist.json')
+      .then(function(r) { return r.json(); })
+      .then(function(d) { playlist = d; });
+
+    function updatePlayBtn() {
+      if (!musicPlay) return;
+      musicPlay.innerHTML = isPlaying
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"/></svg>';
+    }
+
+    function randomIdx() {
+      return Math.floor(Math.random() * playlist.length);
+    }
+
+    function loadTrack(idx) {
+      if (!playlist.length) return;
+      currentIdx = idx >= 0 ? (idx % playlist.length) : randomIdx();
+      var t = playlist[currentIdx];
+      if (musicTitle) musicTitle.textContent = t.videoTitle || '—';
+      if (musicBvid) { musicBvid.textContent = t.bvid; musicBvid.href = 'https://www.bilibili.com/video/' + t.bvid + '/'; }
+      if (musicProgressFill) musicProgressFill.style.width = '0%';
+      audio.src = '/audio/' + t.bvid + '.m4a';
+      isPlaying = false; updatePlayBtn();
+    }
+
+    function playPause() {
+      if (!playlist.length) return;
+      if (currentIdx < 0) { loadTrack(-1); return; }
+      if (audio.paused) {
+        audio.play().then(function() { isPlaying = true; updatePlayBtn(); });
+      } else {
+        audio.pause(); isPlaying = false; updatePlayBtn();
+      }
+    }
+
+    function toggleCard() {
+      open = !open;
+      musicCard.classList.toggle('open', open);
+      setToggleImg(open ? 'open' : 'default');
+    }
+
+    // Image states: momo (default) → haqi (hover) → zhua (open)
+    var toggleImg = document.getElementById('musicToggleImg');
+    function setToggleImg(state) {
+      if (!toggleImg) return;
+      if (state === 'open') toggleImg.src = '/img/zhua_maodie.webp';
+      else if (state === 'hover') toggleImg.src = '/img/haqi_maodie.webp';
+      else toggleImg.src = '/img/momo_maodie.webp';
+    }
+    if (musicToggle && toggleImg) {
+      musicToggle.addEventListener('mouseenter', function() { if (!open) setToggleImg('hover'); });
+      musicToggle.addEventListener('mouseleave', function() { setToggleImg(open ? 'open' : 'default'); });
+    }
+
+    // Drag to move
+    var dragging = false, startX, startY, startLeft, startTop;
+    if (musicToggle) {
+      var saved = localStorage.getItem('musicTogglePos');
+      if (saved) {
+        var pos = JSON.parse(saved);
+        musicToggle.style.bottom = 'auto';
+        musicToggle.style.right = 'auto';
+        musicToggle.style.left = pos.left + 'px';
+        musicToggle.style.top = pos.top + 'px';
+      }
+
+      musicToggle.addEventListener('mousedown', function(e) {
+        if (e.button !== 0) return;
+        dragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        var rect = musicToggle.getBoundingClientRect();
+        startLeft = rect.left;
+        startTop = rect.top;
+        e.preventDefault();
+      });
+    }
+
+    document.addEventListener('mousemove', function(e) {
+      if (!dragging) return;
+      var dx = e.clientX - startX;
+      var dy = e.clientY - startY;
+      musicToggle.style.bottom = 'auto';
+      musicToggle.style.right = 'auto';
+      musicToggle.style.left = Math.max(0, Math.min(window.innerWidth - 80, startLeft + dx)) + 'px';
+      musicToggle.style.top = Math.max(0, Math.min(window.innerHeight - 80, startTop + dy)) + 'px';
+    });
+
+    document.addEventListener('mouseup', function() {
+      if (!dragging) return;
+      dragging = false;
+      var rect = musicToggle.getBoundingClientRect();
+      localStorage.setItem('musicTogglePos', JSON.stringify({ left: rect.left, top: rect.top }));
+    });
+
+    if (musicToggle) {
+      musicToggle.addEventListener('click', function(e) {
+        if (dragging) return;
+        toggleCard();
+      });
+    }
+    if (musicClose) musicClose.addEventListener('click', toggleCard);
+    if (musicPlay) musicPlay.addEventListener('click', playPause);
+    if (musicPrev) musicPrev.addEventListener('click', function(e) { e.stopPropagation(); loadTrack(-1); });
+    if (musicNext) musicNext.addEventListener('click', function(e) { e.stopPropagation(); loadTrack(-1); });
+
+    audio.addEventListener('ended', function() { loadTrack(-1); });
+    audio.addEventListener('play', function() { isPlaying = true; updatePlayBtn(); });
+    audio.addEventListener('pause', function() { isPlaying = false; updatePlayBtn(); });
+    audio.addEventListener('timeupdate', function() {
+      if (musicProgressFill && audio.duration) {
+        musicProgressFill.style.width = (audio.currentTime / audio.duration * 100) + '%';
+      }
+    });
+
+    if (musicVolume) {
+      musicVolume.addEventListener('input', function() { audio.volume = this.value / 100; });
+      audio.volume = 0.15;
+    }
+  })();
+</script>

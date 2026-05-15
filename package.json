@@ -6,6 +6,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build && node scripts/relativize.mjs",
+    "refresh-audio": "node scripts/fetch-audio-urls.mjs",
     "preview": "astro preview"
   },
   "dependencies": {
