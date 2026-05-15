@@ -566,6 +566,12 @@ img {
   overflow: hidden;
 }
 
+.article-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .article-card-image svg {
   width: 48px;
   height: 48px;
@@ -737,7 +743,7 @@ img {
    ================================================================ */
 
 .post-page {
-  max-width: 720px;
+  max-width: 900px;
   margin: 0 auto;
   padding: var(--space-4xl) var(--space-lg);
 }

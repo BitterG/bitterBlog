@@ -110,13 +110,44 @@
 }
 
 .post-content pre {
+  position: relative;
   margin: var(--space-lg) 0;
   padding: var(--space-md);
+  padding-top: var(--space-xl);
   background: var(--primary);
   border-radius: var(--rounded-md);
   overflow-x: auto;
   font-size: 13px;
   line-height: 1.6;
+}
+
+.post-content .copy-btn {
+  position: absolute;
+  top: var(--space-xxs);
+  right: var(--space-xxs);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 var(--space-xs);
+  border-radius: var(--rounded-xs);
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.6);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.post-content .copy-btn:hover {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+.post-content .copy-btn.copied {
+  background: rgba(80,227,194,0.2);
+  color: var(--cyan);
 }
 
 .post-content pre code {
