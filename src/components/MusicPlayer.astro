@@ -9,6 +9,7 @@
       <button class="music-card-close" id="musicClose">✕</button>
     </div>
     <div class="music-card-body">
+      <p class="music-poem">今夜闻君哈基语<br>如听仙乐耳暂明</p>
       <div class="music-controls">
         <button class="music-btn" id="musicPrev">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
@@ -20,7 +21,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
         </button>
       </div>
-      <div class="music-progress">
+      <div class="music-progress" id="musicProgressBar">
         <div class="music-progress-fill" id="musicProgressFill"></div>
       </div>
       <div class="music-volume">
@@ -51,13 +52,47 @@
     var musicNext = document.getElementById('musicNext');
     var musicTitle = document.getElementById('musicTitle');
     var musicProgressFill = document.getElementById('musicProgressFill');
+    var musicProgressBar = document.getElementById('musicProgressBar');
     var musicVolume = document.getElementById('musicVolume');
     var musicBvid = document.getElementById('musicBvid');
     var open = false;
 
     fetch('/playlist.json')
       .then(function(r) { return r.json(); })
-      .then(function(d) { playlist = d; });
+      .then(function(d) {
+        playlist = d;
+        // Restore previous session
+        var saved = sessionStorage.getItem('musicState');
+        if (saved) {
+          var state = JSON.parse(saved);
+          if (state.idx >= 0 && state.idx < playlist.length) {
+            currentIdx = state.idx;
+            audio.src = '/audio/' + playlist[currentIdx].bvid + '.m4a';
+            audio.currentTime = state.time || 0;
+            audio.volume = state.vol != null ? state.vol : 0.15;
+            if (musicVolume) musicVolume.value = (audio.volume * 100);
+            if (musicTitle) musicTitle.textContent = playlist[currentIdx].videoTitle || '—';
+            if (musicBvid) {
+              musicBvid.textContent = playlist[currentIdx].bvid;
+              musicBvid.href = 'https://www.bilibili.com/video/' + playlist[currentIdx].bvid + '/';
+            }
+            if (state.playing) audio.play();
+          }
+        }
+      });
+
+    function saveState() {
+      if (currentIdx < 0) return;
+      sessionStorage.setItem('musicState', JSON.stringify({
+        idx: currentIdx, time: audio.currentTime, vol: audio.volume, playing: isPlaying
+      }));
+    }
+
+    // Save state before navigating away
+    window.addEventListener('beforeunload', saveState);
+
+    // Save state periodically
+    setInterval(saveState, 5000);
 
     function updatePlayBtn() {
       if (!musicPlay) return;
@@ -78,7 +113,7 @@
       if (musicBvid) { musicBvid.textContent = t.bvid; musicBvid.href = 'https://www.bilibili.com/video/' + t.bvid + '/'; }
       if (musicProgressFill) musicProgressFill.style.width = '0%';
       audio.src = '/audio/' + t.bvid + '.m4a';
-      isPlaying = false; updatePlayBtn();
+      audio.play().then(function() { isPlaying = true; updatePlayBtn(); }).catch(function() { isPlaying = false; updatePlayBtn(); });
     }
 
     function playPause() {
@@ -170,6 +205,15 @@
         musicProgressFill.style.width = (audio.currentTime / audio.duration * 100) + '%';
       }
     });
+
+    if (musicProgressBar) {
+      musicProgressBar.addEventListener('click', function(e) {
+        if (!audio.duration) return;
+        var rect = this.getBoundingClientRect();
+        var pct = (e.clientX - rect.left) / rect.width;
+        audio.currentTime = pct * audio.duration;
+      });
+    }
 
     if (musicVolume) {
       musicVolume.addEventListener('input', function() { audio.volume = this.value / 100; });

@@ -870,6 +870,14 @@ img {
   color: var(--mute);
 }
 
+.music-poem {
+  text-align: center;
+  font-size: 13px;
+  color: var(--mute);
+  line-height: 1.6;
+  margin: 0 0 var(--space-sm) 0;
+}
+
 .music-controls {
   display: flex;
   align-items: center;
@@ -909,11 +917,12 @@ img {
 }
 
 .music-progress {
-  height: 3px;
+  height: 6px;
   background: rgba(0,0,0,0.08);
-  border-radius: 2px;
+  border-radius: 3px;
   margin-bottom: var(--space-sm);
   overflow: hidden;
+  cursor: pointer;
 }
 
 .music-progress-fill {
