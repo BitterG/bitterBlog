@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import NavBar from '../../components/NavBar.astro';
+import Footer from '../../components/Footer.astro';
+import { getCollection } from 'astro:content';
+import { getCategoryName } from '../../utils/categories';
+import '../../styles/post.css';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  return posts.map(post => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { title, date, category, tags = [] } = post.data;
+const categoryName = getCategoryName(category);
+const { Content } = await post.render();
+---
+
+<BaseLayout title={title}>
+  <NavBar />
+  <article class="post-page">
+    <header class="post-header">
+      <h1 class="post-title display-lg">{title}</h1>
+      <div class="post-meta">
+        <span class="post-date">{date}</span>
+        <span class="post-category">{categoryName}</span>
+        {tags.slice(0, 5).map(tag => <span class="post-category">{tag}</span>)}
+      </div>
+    </header>
+    <hr class="post-divider" />
+    <div class="post-content">
+      <Content />
+    </div>
+    <div class="post-back">
+      <a href="/" class="button-secondary">← 返回首页</a>
+    </div>
+  </article>
+  <Footer />
+</BaseLayout>
