@@ -57,7 +57,7 @@
     var musicBvid = document.getElementById('musicBvid');
     var open = false;
 
-    fetch('/playlist.json')
+    fetch('/playlist-selected.json')
       .then(function(r) { return r.json(); })
       .then(function(d) {
         playlist = d;
