@@ -21,6 +21,7 @@ Thumbs.db
 
 # audio files (downloaded at build time)
 public/audio/
+public/playlist-selected.json
 
 # logs
 *.log
