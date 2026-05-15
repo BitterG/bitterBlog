@@ -31,6 +31,7 @@ const serializedPosts = JSON.stringify(posts.map(p => {
     title: p.data.title,
     date: p.data.date,
     category: getCategoryName(p.data.category),
+    categoryId: p.data.category,
     tags: p.data.tags || [],
     excerpt,
     firstImage,
@@ -57,18 +58,20 @@ const serializedPosts = JSON.stringify(posts.map(p => {
 </section>
 
 <script define:vars={{ serializedPosts }}>
-  const PAGE_SIZE = 6;
-  let currentPage = 1;
+  var PAGE_SIZE = 6;
+  var currentPage = 1;
 
-  const allPosts = JSON.parse(serializedPosts);
-  let filteredPosts = [...allPosts];
+  var allPosts = JSON.parse(serializedPosts);
 
-  const searchInput = document.getElementById('searchInput');
-  const articlesGrid = document.getElementById('articlesGrid');
-  const articlesEmpty = document.getElementById('articlesEmpty');
-  const articlesFooter = document.getElementById('articlesFooter');
-  const loadMoreBtn = document.getElementById('loadMoreBtn');
-  const articleCount = document.getElementById('articleCount');
+  var filteredPosts = allPosts.slice();
+
+  // DOM refs
+  var searchInput = document.getElementById('searchInput');
+  var articlesGrid = document.getElementById('articlesGrid');
+  var articlesEmpty = document.getElementById('articlesEmpty');
+  var articlesFooter = document.getElementById('articlesFooter');
+  var loadMoreBtn = document.getElementById('loadMoreBtn');
+  var articleCount = document.getElementById('articleCount');
 
   function createArticleHTML(post) {
     var dedupedTags = post.tags.filter(function(t) { return t !== post.category; }).slice(0, 3);
@@ -153,5 +156,17 @@ const serializedPosts = JSON.stringify(posts.map(p => {
         articlesFooter.style.display = hasMore ? 'flex' : 'none';
       }
     });
+  }
+
+  // Init: apply category filter from URL param
+  var urlParams = new URLSearchParams(window.location.search);
+  var catFilter = urlParams.get('category');
+  if (catFilter) {
+    filteredPosts = allPosts.filter(function(p) { return p.categoryId === catFilter; });
+    renderPage(true);
+    if (filteredPosts.length === 0 && articlesEmpty) {
+      articlesEmpty.innerHTML = '<p class="body-lg" style="color:var(--mute)">该分类下暂无文章.</p>';
+      articlesEmpty.style.display = 'block';
+    }
   }
 </script>

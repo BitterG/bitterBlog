@@ -3,49 +3,340 @@
     <a href="/" class="nav-logo">bitterBlog</a>
     <ul class="nav-links" id="navLinks">
       <li><a href="/" class="nav-link active">首页</a></li>
-      <li><a href="#" class="nav-link">分类</a></li>
-      <li><a href="#" class="nav-link">关于</a></li>
-      <li><a href="#" class="nav-link">归档</a></li>
+      <li>
+        <span class="nav-link" id="categoryBtn">分类</span>
+        <div class="category-dropdown" id="categoryDropdown">
+          <div class="category-dropdown-inner" id="categoryList"></div>
+        </div>
+      </li>
+      <li><a href="#" class="nav-link" id="aboutBtn">关于</a></li>
     </ul>
     <div class="nav-actions">
-      <button class="nav-cta-ask-ai" aria-label="搜索">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-          <circle cx="7" cy="7" r="4.5"/>
-          <path d="M10.5 10.5L14 14"/>
-        </svg>
-      </button>
-      <button class="nav-cta-login">登录</button>
-      <button class="nav-cta-signup">订阅</button>
+      <div class="nav-search" id="navSearch">
+        <button class="nav-cta-ask-ai" id="searchToggle" aria-label="搜索">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <circle cx="7" cy="7" r="4.5"/>
+            <path d="M10.5 10.5L14 14"/>
+          </svg>
+        </button>
+        <div class="nav-search-panel" id="searchPanel">
+          <div class="nav-search-input-wrap">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <circle cx="7" cy="7" r="4.5"/>
+              <path d="M10.5 10.5L14 14"/>
+            </svg>
+            <input type="text" class="nav-search-input" id="navSearchInput" placeholder="搜索文章..." autocomplete="off" />
+          </div>
+          <div class="nav-search-results" id="searchResults"></div>
+        </div>
+      </div>
     </div>
     <button class="nav-hamburger" id="hamburgerBtn" aria-label="菜单">
-      <span></span>
-      <span></span>
-      <span></span>
+      <span></span><span></span><span></span>
     </button>
   </div>
 </nav>
 
-<!-- Mobile Menu Overlay -->
+<!-- Mobile Menu -->
 <div class="mobile-menu" id="mobileMenu">
   <ul class="mobile-nav-links">
     <li><a href="/" class="mobile-nav-link active">首页</a></li>
-    <li><a href="#" class="mobile-nav-link">分类</a></li>
-    <li><a href="#" class="mobile-nav-link">关于</a></li>
-    <li><a href="#" class="mobile-nav-link">归档</a></li>
+    <li><span class="mobile-nav-link" id="mobileCategoryBtn">分类</span></li>
+    <li><a href="#" class="mobile-nav-link" id="mobileAboutBtn">关于</a></li>
   </ul>
-  <div class="mobile-nav-actions">
-    <button class="nav-cta-login">登录</button>
-    <button class="nav-cta-signup">订阅</button>
+  <div class="mobile-category-list" id="mobileCategoryList" style="display:none;"></div>
+</div>
+
+<!-- Category Dropdown Overlay (mobile) -->
+<div class="category-overlay" id="categoryOverlay">
+  <div class="category-overlay-inner">
+    <div class="category-overlay-header">
+      <span class="display-sm">所有分类</span>
+      <button class="category-overlay-close" id="categoryOverlayClose">✕</button>
+    </div>
+    <div class="category-grid" id="categoryGrid"></div>
   </div>
 </div>
 
+<!-- About Modal -->
+<div class="about-overlay" id="aboutOverlay">
+  <div class="about-modal" id="aboutModal">
+    <button class="about-close" id="aboutClose">✕</button>
+    <h2 class="display-md">关于 bitterBlog</h2>
+    <p class="body-md" style="color:var(--body);margin-top:var(--space-md);">
+      技术探索与思考，记录前端、后端与系统设计中的实践与感悟。
+    </p>
+    <p class="body-sm" style="color:var(--mute);margin-top:var(--space-sm);">
+      由 <strong>苦瓜</strong> 维护 &middot; Astro SSG 构建 &middot; GitHub Pages 部署
+    </p>
+    <div class="about-links">
+      <a href="https://github.com/BitterG" target="_blank" class="about-link">GitHub</a>
+    </div>
+  </div>
+  <canvas class="shatter-canvas" id="shatterCanvas"></canvas>
+</div>
+
 <script>
-  const hamburgerBtn = document.getElementById('hamburgerBtn');
-  const mobileMenu = document.getElementById('mobileMenu');
+  // ============================================
+  // Category data
+  // ============================================
+  var categories = [
+    { id: 'dbhknw', name: 'Android 内核' },
+    { id: 'koo1se', name: 'eBPF' },
+    { id: 'nohhgp', name: 'Windows' },
+    { id: 'frida', name: 'Frida Android' },
+    { id: 'lsposed', name: 'LSPosed' },
+    { id: 'java-proxy', name: 'Java 代理' },
+    { id: 'jvm', name: 'JVM' },
+    { id: 'nio', name: 'Java NIO' },
+    { id: 'netty', name: 'Netty' },
+    { id: 'rabbitmq', name: 'RabbitMQ' },
+    { id: 'zookeeper', name: 'ZooKeeper' },
+    { id: 'mongodb', name: 'MongoDB' },
+    { id: 'log4j2', name: 'Log4j2' },
+    { id: 'spring-interceptor', name: 'Spring 拦截器' },
+    { id: 'spring-exception', name: 'Spring 异常处理' },
+    { id: 'juc', name: 'JUC' },
+    { id: 'projects', name: '项目' }
+  ];
+
+  function renderCategoryLinks(container) {
+    var html = '';
+    categories.forEach(function(c) {
+      html += '<a href="/?category=' + c.id + '" class="category-chip">' + c.name + '</a>';
+    });
+    container.innerHTML = html;
+  }
+
+  // ============================================
+  // Category Dropdown (desktop)
+  // ============================================
+  var categoryBtn = document.getElementById('categoryBtn');
+  var categoryDropdown = document.getElementById('categoryDropdown');
+  var categoryList = document.getElementById('categoryList');
+  if (categoryList) renderCategoryLinks(categoryList);
+
+  if (categoryBtn && categoryDropdown) {
+    categoryBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      categoryDropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', function() {
+      categoryDropdown.classList.remove('open');
+    });
+  }
+
+  // ============================================
+  // Category Overlay (mobile / click "分类" opens overlay)
+  // ============================================
+  var categoryOverlay = document.getElementById('categoryOverlay');
+  var categoryGrid = document.getElementById('categoryGrid');
+  var categoryOverlayClose = document.getElementById('categoryOverlayClose');
+  var mobileCategoryBtn = document.getElementById('mobileCategoryBtn');
+
+  if (categoryGrid) renderCategoryLinks(categoryGrid);
+
+  function openCategoryOverlay() {
+    if (categoryOverlay) categoryOverlay.classList.add('open');
+    if (mobileMenu) { mobileMenu.classList.remove('open'); hamburgerBtn.classList.remove('open'); }
+  }
+
+  if (categoryBtn) {
+    categoryBtn.addEventListener('click', function(e) {
+      if (window.innerWidth <= 599) {
+        e.stopPropagation();
+        openCategoryOverlay();
+      }
+    });
+  }
+  if (mobileCategoryBtn) {
+    mobileCategoryBtn.addEventListener('click', openCategoryOverlay);
+  }
+  if (categoryOverlayClose) {
+    categoryOverlayClose.addEventListener('click', function() {
+      categoryOverlay.classList.remove('open');
+    });
+  }
+
+  // ============================================
+  // About Modal with shatter effect
+  // ============================================
+  var aboutOverlay = document.getElementById('aboutOverlay');
+  var aboutModal = document.getElementById('aboutModal');
+  var aboutClose = document.getElementById('aboutClose');
+  var aboutBtn = document.getElementById('aboutBtn');
+  var mobileAboutBtn = document.getElementById('mobileAboutBtn');
+  var shatterCanvas = document.getElementById('shatterCanvas');
+  var isClosing = false;
+
+  function openAbout(e) {
+    e.preventDefault();
+    if (isClosing) return;
+    aboutOverlay.classList.add('open');
+    aboutModal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    if (mobileMenu) { mobileMenu.classList.remove('open'); hamburgerBtn.classList.remove('open'); }
+  }
+
+  function shatterClose() {
+    if (isClosing) return;
+    isClosing = true;
+
+    var rect = aboutModal.getBoundingClientRect();
+    var cx = rect.left + rect.width / 2;
+    var cy = rect.top + rect.height / 2;
+
+    aboutModal.classList.add('closing');
+
+    // Canvas shatter
+    if (shatterCanvas) {
+      shatterCanvas.width = window.innerWidth;
+      shatterCanvas.height = window.innerHeight;
+      shatterCanvas.style.display = 'block';
+      var ctx = shatterCanvas.getContext('2d');
+
+      var particles = [];
+      var fragmentCount = 60;
+      for (var i = 0; i < fragmentCount; i++) {
+        var angle = Math.random() * Math.PI * 2;
+        var speed = 2 + Math.random() * 6;
+        var x = cx;
+        var y = cy;
+        var vx = Math.cos(angle) * speed;
+        var vy = Math.sin(angle) * speed;
+        var size = 4 + Math.random() * 12;
+        var life = 1;
+        var decay = 0.01 + Math.random() * 0.03;
+        var hue = 200 + Math.random() * 60;
+        particles.push({ x: x, y: y, vx: vx, vy: vy, size: size, life: life, decay: decay, hue: hue });
+      }
+
+      function animateParticles() {
+        ctx.clearRect(0, 0, shatterCanvas.width, shatterCanvas.height);
+        var alive = false;
+        for (var j = 0; j < particles.length; j++) {
+          var p = particles[j];
+          if (p.life <= 0) continue;
+          alive = true;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.15;
+          p.life -= p.decay;
+          ctx.globalAlpha = p.life;
+          ctx.fillStyle = 'hsl(' + p.hue + ', 70%, 60%)';
+          ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+        }
+        ctx.globalAlpha = 1;
+        if (alive) {
+          requestAnimationFrame(animateParticles);
+        } else {
+          shatterCanvas.style.display = 'none';
+          aboutOverlay.classList.remove('open');
+          aboutModal.classList.remove('open', 'closing');
+          document.body.style.overflow = '';
+          isClosing = false;
+        }
+      }
+      requestAnimationFrame(animateParticles);
+    } else {
+      setTimeout(function() {
+        aboutOverlay.classList.remove('open');
+        aboutModal.classList.remove('open', 'closing');
+        document.body.style.overflow = '';
+        isClosing = false;
+      }, 300);
+    }
+  }
+
+  if (aboutBtn) aboutBtn.addEventListener('click', openAbout);
+  if (mobileAboutBtn) mobileAboutBtn.addEventListener('click', openAbout);
+  if (aboutClose) aboutClose.addEventListener('click', shatterClose);
+  if (aboutOverlay) {
+    aboutOverlay.addEventListener('click', function(e) {
+      if (e.target === aboutOverlay) shatterClose();
+    });
+  }
+
+  // ============================================
+  // Search button → focus hero search input
+  // ============================================
+  // ============================================
+  // Navbar Search Dropdown
+  // ============================================
+  var searchToggle = document.getElementById('searchToggle');
+  var searchPanel = document.getElementById('searchPanel');
+  var navSearchInput = document.getElementById('navSearchInput');
+  var searchResults = document.getElementById('searchResults');
+  var searchOpen = false;
+  var postIndex = window.__SEARCH_INDEX__ || [];
+
+  function openSearch() {
+    searchOpen = true;
+    searchPanel.classList.add('open');
+    navSearchInput.focus();
+    document.addEventListener('click', onOutsideClick);
+  }
+
+  function closeSearch() {
+    searchOpen = false;
+    searchPanel.classList.remove('open');
+    navSearchInput.value = '';
+    searchResults.innerHTML = '';
+    document.removeEventListener('click', onOutsideClick);
+  }
+
+  function onOutsideClick(e) {
+    var search = document.getElementById('navSearch');
+    if (search && !search.contains(e.target)) {
+      closeSearch();
+    }
+  }
+
+  if (searchToggle) {
+    searchToggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (searchOpen) { closeSearch(); }
+      else { openSearch(); }
+    });
+  }
+
+  if (navSearchInput) {
+    navSearchInput.addEventListener('input', function() {
+      var q = this.value.toLowerCase().trim();
+      if (!q) { searchResults.innerHTML = ''; return; }
+      var matches = postIndex.filter(function(p) {
+        return p.title.toLowerCase().indexOf(q) !== -1 ||
+          p.category.toLowerCase().indexOf(q) !== -1 ||
+          p.tags.some(function(t) { return t.toLowerCase().indexOf(q) !== -1; });
+      }).slice(0, 8);
+      if (matches.length === 0) {
+        searchResults.innerHTML = '<div class="nav-search-empty">无匹配结果</div>';
+      } else {
+        var html = '';
+        matches.forEach(function(p) {
+          html += '<a href="/posts/' + p.slug + '/" class="nav-search-item">' +
+            '<span class="nav-search-item-title">' + p.title + '</span>' +
+            '<span class="nav-search-item-cat">' + p.category + '</span>' +
+          '</a>';
+        });
+        searchResults.innerHTML = html;
+      }
+    });
+
+    navSearchInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeSearch();
+    });
+  }
+
+  // ============================================
+  // Mobile hamburger
+  // ============================================
+  var hamburgerBtn = document.getElementById('hamburgerBtn');
+  var mobileMenu = document.getElementById('mobileMenu');
 
   if (hamburgerBtn && mobileMenu) {
-    hamburgerBtn.addEventListener('click', () => {
-      const isOpen = mobileMenu.classList.contains('open');
+    hamburgerBtn.addEventListener('click', function() {
+      var isOpen = mobileMenu.classList.contains('open');
       if (isOpen) {
         mobileMenu.classList.remove('open');
         hamburgerBtn.classList.remove('open');
@@ -57,8 +348,8 @@
       }
     });
 
-    mobileMenu.querySelectorAll('.mobile-nav-link').forEach(link => {
-      link.addEventListener('click', () => {
+    mobileMenu.querySelectorAll('.mobile-nav-link').forEach(function(link) {
+      link.addEventListener('click', function() {
         mobileMenu.classList.remove('open');
         hamburgerBtn.classList.remove('open');
         document.body.style.overflow = '';
