@@ -1,6 +1,7 @@
 ---
 import ArticleCard from './ArticleCard.astro';
 import type { Post } from './ArticleCard.astro';
+import { getCategoryName } from '../utils/categories';
 
 interface Props {
   posts: Post[];
@@ -24,13 +25,15 @@ const serializedPosts = JSON.stringify(posts.map(p => {
     .replace(/\n+/g, ' ')
     .trim()
     .slice(0, 150);
+  const firstImage = bodyText.match(/!\[[^\]]*\]\(([^)]+)\)/)?.[1] ?? null;
   return {
     slug: p.slug,
     title: p.data.title,
     date: p.data.date,
-    category: p.data.category,
+    category: getCategoryName(p.data.category),
     tags: p.data.tags || [],
     excerpt,
+    firstImage,
   };
 }));
 ---
@@ -57,83 +60,65 @@ const serializedPosts = JSON.stringify(posts.map(p => {
   const PAGE_SIZE = 6;
   let currentPage = 1;
 
-  interface PostData {
-    slug: string;
-    title: string;
-    date: string;
-    category: string;
-    tags: string[];
-    excerpt: string;
-  }
-
-  const allPosts: PostData[] = JSON.parse(serializedPosts);
+  const allPosts = JSON.parse(serializedPosts);
   let filteredPosts = [...allPosts];
 
-  const searchInput = document.getElementById('searchInput') as HTMLInputElement | null;
+  const searchInput = document.getElementById('searchInput');
   const articlesGrid = document.getElementById('articlesGrid');
   const articlesEmpty = document.getElementById('articlesEmpty');
   const articlesFooter = document.getElementById('articlesFooter');
   const loadMoreBtn = document.getElementById('loadMoreBtn');
   const articleCount = document.getElementById('articleCount');
 
-  function createArticleHTML(post: PostData): string {
-    const tagHTML = [post.category, ...post.tags.slice(0, 3)]
-      .map(t => `<span class="article-card-tag">${t}</span>`)
+  function createArticleHTML(post) {
+    var dedupedTags = post.tags.filter(function(t) { return t !== post.category; }).slice(0, 3);
+    var tagHTML = [post.category].concat(dedupedTags)
+      .map(function(t) { return '<span class="article-card-tag">' + t + '</span>'; })
       .join('');
-    return `
-      <article class="article-card">
-        <div class="article-card-image">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <line x1="10" y1="9" x2="8" y2="9"/>
-          </svg>
-        </div>
-        <div class="article-card-body">
-          <div class="article-card-tags">${tagHTML}</div>
-          <h3 class="article-card-title display-sm">
-            <a href="./posts/${post.slug}/">${post.title}</a>
-          </h3>
-          <p class="article-card-excerpt body-sm">${post.excerpt}</p>
-          <div class="article-card-meta">
-            <span class="article-card-date">${post.date}</span>
-            <span class="article-card-category">${post.category}</span>
-          </div>
-        </div>
-      </article>`;
+    var imgSrc = post.firstImage || 'https://uapis.cn/api/v1/random/image?category=bq&type=ikun&_=' + post.slug;
+    var imageHTML = '<div class="article-card-image"><img src="' + imgSrc + '" alt="' + post.title + '" loading="lazy" /></div>';
+    return '<article class="article-card">' + imageHTML +
+      '<div class="article-card-body">' +
+        '<div class="article-card-tags">' + tagHTML + '</div>' +
+        '<h3 class="article-card-title display-sm"><a href="./posts/' + post.slug + '/">' + post.title + '</a></h3>' +
+        '<p class="article-card-excerpt body-sm">' + post.excerpt + '</p>' +
+        '<div class="article-card-meta">' +
+          '<span class="article-card-date">' + post.date + '</span>' +
+          '<span class="article-card-category">' + post.category + '</span>' +
+        '</div>' +
+      '</div>' +
+    '</article>';
   }
 
-  function filterPosts(query: string) {
-    const q = query.toLowerCase().trim();
+  function filterPosts(query) {
+    var q = query.toLowerCase().trim();
     if (!q) {
-      filteredPosts = [...allPosts];
+      filteredPosts = allPosts.slice();
     } else {
-      filteredPosts = allPosts.filter(p =>
-        p.title.toLowerCase().includes(q) ||
-        p.excerpt.toLowerCase().includes(q) ||
-        p.tags.some(t => t.toLowerCase().includes(q)) ||
-        p.category.toLowerCase().includes(q)
-      );
+      filteredPosts = allPosts.filter(function(p) {
+        return p.title.toLowerCase().indexOf(q) !== -1 ||
+          p.excerpt.toLowerCase().indexOf(q) !== -1 ||
+          p.tags.some(function(t) { return t.toLowerCase().indexOf(q) !== -1; }) ||
+          p.category.toLowerCase().indexOf(q) !== -1;
+      });
     }
   }
 
-  function renderPage(reset: boolean) {
+  function renderPage(reset) {
     if (reset && articlesGrid) {
       articlesGrid.innerHTML = '';
     }
 
-    const startIdx = reset ? 0 : (currentPage - 1) * PAGE_SIZE;
-    const visible = filteredPosts.slice(startIdx, startIdx + PAGE_SIZE);
+    var startIdx = reset ? 0 : (currentPage - 1) * PAGE_SIZE;
+    var visible = filteredPosts.slice(startIdx, startIdx + PAGE_SIZE);
 
     if (reset && articlesGrid) {
-      visible.forEach(post => {
+      visible.forEach(function(post) {
         articlesGrid.insertAdjacentHTML('beforeend', createArticleHTML(post));
       });
     }
 
-    const hasMore = startIdx + PAGE_SIZE < filteredPosts.length;
+    var hasMore = startIdx + PAGE_SIZE < filteredPosts.length;
     if (articlesEmpty) {
       articlesEmpty.style.display = filteredPosts.length === 0 ? 'block' : 'none';
     }
@@ -145,22 +130,28 @@ const serializedPosts = JSON.stringify(posts.map(p => {
     }
   }
 
-  searchInput?.addEventListener('input', function(this: HTMLInputElement) {
-    currentPage = 1;
-    filterPosts(this.value);
-    renderPage(true);
-  });
-
-  loadMoreBtn?.addEventListener('click', () => {
-    currentPage++;
-    const startIdx = (currentPage - 1) * PAGE_SIZE;
-    const newPosts = filteredPosts.slice(startIdx, startIdx + PAGE_SIZE);
-    newPosts.forEach(post => {
-      articlesGrid?.insertAdjacentHTML('beforeend', createArticleHTML(post));
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      currentPage = 1;
+      filterPosts(this.value);
+      renderPage(true);
     });
-    const hasMore = startIdx + PAGE_SIZE < filteredPosts.length;
-    if (articlesFooter) {
-      articlesFooter.style.display = hasMore ? 'flex' : 'none';
-    }
-  });
+  }
+
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', function() {
+      currentPage++;
+      var startIdx = (currentPage - 1) * PAGE_SIZE;
+      var newPosts = filteredPosts.slice(startIdx, startIdx + PAGE_SIZE);
+      newPosts.forEach(function(post) {
+        if (articlesGrid) {
+          articlesGrid.insertAdjacentHTML('beforeend', createArticleHTML(post));
+        }
+      });
+      var hasMore = startIdx + PAGE_SIZE < filteredPosts.length;
+      if (articlesFooter) {
+        articlesFooter.style.display = hasMore ? 'flex' : 'none';
+      }
+    });
+  }
 </script>
