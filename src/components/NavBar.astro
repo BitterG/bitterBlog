@@ -1,0 +1,68 @@
+<nav class="nav-bar" id="navBar">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">bitterBlog</a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/" class="nav-link active">首页</a></li>
+      <li><a href="#" class="nav-link">分类</a></li>
+      <li><a href="#" class="nav-link">关于</a></li>
+      <li><a href="#" class="nav-link">归档</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="nav-cta-ask-ai" aria-label="搜索">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="7" cy="7" r="4.5"/>
+          <path d="M10.5 10.5L14 14"/>
+        </svg>
+      </button>
+      <button class="nav-cta-login">登录</button>
+      <button class="nav-cta-signup">订阅</button>
+    </div>
+    <button class="nav-hamburger" id="hamburgerBtn" aria-label="菜单">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Menu Overlay -->
+<div class="mobile-menu" id="mobileMenu">
+  <ul class="mobile-nav-links">
+    <li><a href="/" class="mobile-nav-link active">首页</a></li>
+    <li><a href="#" class="mobile-nav-link">分类</a></li>
+    <li><a href="#" class="mobile-nav-link">关于</a></li>
+    <li><a href="#" class="mobile-nav-link">归档</a></li>
+  </ul>
+  <div class="mobile-nav-actions">
+    <button class="nav-cta-login">登录</button>
+    <button class="nav-cta-signup">订阅</button>
+  </div>
+</div>
+
+<script>
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+
+  if (hamburgerBtn && mobileMenu) {
+    hamburgerBtn.addEventListener('click', () => {
+      const isOpen = mobileMenu.classList.contains('open');
+      if (isOpen) {
+        mobileMenu.classList.remove('open');
+        hamburgerBtn.classList.remove('open');
+        document.body.style.overflow = '';
+      } else {
+        mobileMenu.classList.add('open');
+        hamburgerBtn.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+    });
+
+    mobileMenu.querySelectorAll('.mobile-nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.remove('open');
+        hamburgerBtn.classList.remove('open');
+        document.body.style.overflow = '';
+      });
+    });
+  }
+</script>
