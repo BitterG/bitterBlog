@@ -1,12 +1,6 @@
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'fs';
 import { join, relative, dirname } from 'path';
 
-// Read base from astro config
-const configPath = join(import.meta.dirname, '..', 'astro.config.mjs');
-const configText = readFileSync(configPath, 'utf-8');
-const baseMatch = configText.match(/base:\s*['"]([^'"]*)['"]/);
-const basePath = baseMatch ? baseMatch[1] : '/';
-
 const distDir = join(import.meta.dirname, '..', 'dist');
 
 function findHtmlFiles(dir) {
@@ -29,6 +23,15 @@ function getRelativeDepth(htmlPath) {
   return rel.split(/[\\/]/).filter(Boolean).length;
 }
 
+function replaceOutsideScripts(html, regex, replacer) {
+  // Split by script tags, only replace in non-script segments
+  const parts = html.split(/(<script[\s>][\s\S]*?<\/script>)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('<script')) return part; // skip script blocks
+    return part.replace(regex, replacer);
+  }).join('');
+}
+
 const htmlFiles = findHtmlFiles(distDir);
 
 for (const filePath of htmlFiles) {
@@ -37,10 +40,8 @@ for (const filePath of htmlFiles) {
 
   let html = readFileSync(filePath, 'utf-8');
 
-  // Replace all absolute local paths (href="/..." or src="/...") with relative paths
-  // Matches href="/ANYTHING" and src="/ANYTHING" but not href="//" (protocol-relative)
-  // and not https:// etc.
-  html = html.replace(
+  html = replaceOutsideScripts(
+    html,
     /(href|src)="\/([^/][^"]*)"/g,
     (match, attr, path) => `${attr}="${prefix}${path}"`
   );
