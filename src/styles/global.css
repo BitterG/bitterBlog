@@ -702,6 +702,342 @@ img {
 }
 
 /* ================================================================
+   MUSIC PLAYER (floating frosted glass card)
+   ================================================================ */
+
+.music-player {
+  z-index: 250;
+}
+
+.music-card {
+  display: none;
+  position: fixed;
+  bottom: 80px;
+  right: var(--space-lg);
+  width: 320px;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: var(--rounded-lg);
+  box-shadow: var(--shadow-level-5);
+  overflow: hidden;
+  animation: cardUp 0.25s ease;
+  z-index: 249;
+}
+
+.music-toggle {
+  width: 80px;
+  height: 80px;
+  padding: 0;
+  border-radius: var(--rounded-full);
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px solid rgba(255,255,255,0.5);
+  box-shadow: var(--shadow-level-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  transition: box-shadow 0.2s;
+  position: fixed;
+  bottom: var(--space-lg);
+  right: var(--space-lg);
+  overflow: hidden;
+  user-select: none;
+  z-index: 250;
+}
+
+.music-toggle:active {
+  cursor: grabbing;
+  box-shadow: var(--shadow-level-5);
+}
+
+.music-toggle:hover {
+  box-shadow: var(--shadow-level-5);
+}
+
+.music-toggle-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--rounded-full);
+}
+
+.music-toggle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--rounded-full);
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.music-card.open {
+  display: block;
+}
+
+@keyframes cardUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.music-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-xs) var(--space-md);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.music-card-title {
+  color: var(--mute);
+}
+
+.music-card-prev,
+.music-card-next {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--rounded-xs);
+  background: none;
+  color: var(--mute);
+  font-size: 10px;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+
+.music-card-prev:hover,
+.music-card-next:hover {
+  color: var(--ink);
+  background: rgba(0,0,0,0.05);
+}
+
+.music-card-close {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--rounded-xs);
+  background: none;
+  color: var(--mute);
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+}
+
+.music-card-close:hover {
+  background: rgba(0,0,0,0.05);
+  color: var(--ink);
+}
+
+.music-card-body {
+  padding: var(--space-md);
+}
+
+#musicPlayerWrap {
+  min-height: 200px;
+  background: #000;
+}
+
+#musicPlayerWrap iframe {
+  display: block;
+}
+
+.music-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-sm);
+}
+
+.music-meta-link {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--link);
+  text-decoration: none;
+}
+
+.music-meta-link:hover {
+  color: var(--link-deep);
+}
+
+.music-meta-source {
+  font-size: 10px;
+  color: var(--mute);
+}
+
+.music-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.music-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--rounded-full);
+  background: rgba(0,0,0,0.05);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+
+.music-btn:hover {
+  background: rgba(0,0,0,0.1);
+}
+
+.music-btn-play {
+  width: 40px;
+  height: 40px;
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.music-btn-play:hover {
+  background: var(--primary);
+  opacity: 0.85;
+}
+
+.music-progress {
+  height: 3px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 2px;
+  margin-bottom: var(--space-sm);
+  overflow: hidden;
+}
+
+.music-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--primary);
+  border-radius: 2px;
+  transition: width 0.3s linear;
+}
+
+.music-volume {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--mute);
+}
+
+.music-volume-slider {
+  flex: 1;
+  height: 3px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(0,0,0,0.08);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.music-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+}
+
+.music-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.music-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl);
+  color: var(--mute);
+  font-size: 13px;
+}
+
+.music-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-md);
+  cursor: pointer;
+  transition: background 0.1s;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  text-decoration: none;
+  color: inherit;
+}
+
+.music-item:last-child {
+  border-bottom: none;
+}
+
+.music-item:hover {
+  background: rgba(0,0,0,0.03);
+}
+
+.music-item:hover .music-item-title {
+  color: var(--link);
+}
+
+.music-item-idx {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--mute);
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.music-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.music-item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.music-item-author {
+  font-size: 11px;
+  color: var(--mute);
+  margin-top: 1px;
+}
+
+.music-item-link {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--rounded-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mute);
+  font-size: 10px;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.music-item-link:hover {
+  color: var(--link);
+}
+
+/* ================================================================
    HERO BAND
    ================================================================ */
 

@@ -19,5 +19,8 @@ dist/
 .DS_Store
 Thumbs.db
 
+# audio files (downloaded at build time)
+public/audio/
+
 # logs
 *.log
