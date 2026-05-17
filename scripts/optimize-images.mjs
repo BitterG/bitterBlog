@@ -2,8 +2,9 @@ import { readFileSync, writeFileSync, readdirSync, statSync, existsSync, unlinkS
 import { join, extname, basename, dirname } from 'path';
 import sharp from 'sharp';
 
-const imgDir = 'C:/Users/kugua/Desktop/bitterBlog/webpage/public/img';
-const postsDir = 'C:/Users/kugua/Desktop/bitterBlog/webpage/src/content/posts';
+const root = join(import.meta.dirname, '..');
+const imgDir = join(root, 'public', 'img');
+const postsDir = join(root, 'src', 'content', 'posts');
 const MIN_SIZE = 30720; // 30KB - only convert images larger than this
 
 function walkDir(dir) {
