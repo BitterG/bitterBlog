@@ -702,6 +702,59 @@ img {
 }
 
 /* ================================================================
+   NETWORK NOTICE (top banner)
+   ================================================================ */
+
+.network-notice {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 500;
+  animation: noticeIn 0.3s ease;
+}
+
+@keyframes noticeIn {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+.network-notice-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  background: linear-gradient(135deg, rgba(255,180,50,0.95), rgba(255,140,20,0.95));
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.network-notice-inner span {
+  flex: 1;
+}
+
+.network-notice-close {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--rounded-full);
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.network-notice-close:hover {
+  background: rgba(255,255,255,0.35);
+}
+
+/* ================================================================
    MUSIC PLAYER (floating frosted glass card)
    ================================================================ */
 

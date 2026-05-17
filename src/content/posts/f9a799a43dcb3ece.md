@@ -12,7 +12,7 @@ tags: ["Frida", "Android", "逆向"]
 
 手机开启代理，pc启动charless进行中间人抓包，发现页面数据无法加载
 
-![图片](/img/frida/f9a799a43dcb3ece/1754818691310-511f5c24-0c05-4dab-bfe0-cd44ca210ee6-546523.png)
+![图片](/img/frida/f9a799a43dcb3ece/1754818691310-511f5c24-0c05-4dab-bfe0-cd44ca210ee6-546523.webp)
 
 1.解决方法 使用frida脚本过客户端校验服务端证书  
 
@@ -1503,11 +1503,11 @@ clone项目后运行 py .\r0capture.py -U 应用名 -v
 
 证书被自动存储到sd卡 和密码被设置为r0ysue
 
-![图片](/img/frida/f9a799a43dcb3ece/1754819712146-efc408c8-eccd-459d-b58d-65f3d0eb115c-408724.png)
+![图片](/img/frida/f9a799a43dcb3ece/1754819712146-efc408c8-eccd-459d-b58d-65f3d0eb115c-408724.webp)
 
 以tracer-keystore.js脚本为例 运行后点击触发即可显示密码，可从Stream流下载证书，也可解包从静态文件中取出
 
-![图片](/img/frida/f9a799a43dcb3ece/1754819907724-0cdddddc-195f-4428-b15f-3930e8ddcffb-759868.png)
+![图片](/img/frida/f9a799a43dcb3ece/1754819907724-0cdddddc-195f-4428-b15f-3930e8ddcffb-759868.webp)
 
 安卓默认的是BKS格式的证书需要转成xx.p12格式的来使用，使用工具KeyStore Explorer进行格式转换[https://github.com/kaikramer/keystore-explorer/releases](https://github.com/kaikramer/keystore-explorer/releases) 使用v5.51版本 新版本5.5有bug会读取失败
 
@@ -1515,19 +1515,19 @@ clone项目后运行 py .\r0capture.py -U 应用名 -v
 
 将转换后的p12证书加载到charless后配合ssl unpinning一起使用可用过双向验证
 
-![图片](/img/frida/f9a799a43dcb3ece/1754820272145-59fd9809-ee49-48d9-883b-52b0efbcd169-222498.png)
+![图片](/img/frida/f9a799a43dcb3ece/1754820272145-59fd9809-ee49-48d9-883b-52b0efbcd169-222498.webp)
 
 添加地址端口和证书及其密码
 
-![图片](/img/frida/f9a799a43dcb3ece/1754820303418-8035b568-63e7-4040-bcfe-dce706a5e990-443601.png)
+![图片](/img/frida/f9a799a43dcb3ece/1754820303418-8035b568-63e7-4040-bcfe-dce706a5e990-443601.webp)
 
 不知道端口可使用r0capture脚本hook来查看端口和具体地址，或者反编译apk找到端口
 
-![图片](/img/frida/f9a799a43dcb3ece/1754820470753-d2580210-fe65-41b3-89fc-7900e390123e-356488.png)
+![图片](/img/frida/f9a799a43dcb3ece/1754820470753-d2580210-fe65-41b3-89fc-7900e390123e-356488.webp)
 
 最终charless抓包演示（证书+ssl unpinning脚本）
 
-![图片](/img/frida/f9a799a43dcb3ece/1754820608034-55f0c899-409f-4b0e-8efa-8b8fa92594ba-939654.png)
+![图片](/img/frida/f9a799a43dcb3ece/1754820608034-55f0c899-409f-4b0e-8efa-8b8fa92594ba-939654.webp)
 
 最终通过脚本进行数据获取（读取p12证书，因为不在app中不需要过校验服务器证书的逻辑）
 
