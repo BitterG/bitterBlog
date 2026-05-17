@@ -3,6 +3,7 @@ import '../styles/global.css';
 import { getCollection } from 'astro:content';
 import { getCategoryName } from '../utils/categories';
 import MusicPlayer from '../components/MusicPlayer.astro';
+import NetworkNotice from '../components/NetworkNotice.astro';
 
 export interface Props {
   title?: string;
@@ -35,6 +36,7 @@ const searchIndex = JSON.stringify(allPosts.map(p => ({
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
 </head>
 <body>
+  <NetworkNotice />
   <slot />
   <MusicPlayer />
   <script define:vars={{ searchIndex }}>

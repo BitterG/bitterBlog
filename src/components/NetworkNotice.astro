@@ -1,0 +1,59 @@
+<div class="network-notice" id="networkNotice" style="display:none;">
+  <div class="network-notice-inner">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M1.4 9.9c4-4.6 9.7-7.2 16-6.8"/>
+      <path d="M4.2 13.4c3-3.4 7.2-5.4 11.8-5.1"/>
+      <path d="M7.1 16.9c1.9-2.2 4.6-3.5 7.6-3.3"/>
+      <line x1="12" y1="20" x2="12.01" y2="20"/>
+    </svg>
+    <span>局部网络访问可能较慢，建议配合网络加速工具或代理以获得更佳体验。</span>
+    <button class="network-notice-close" id="networkNoticeClose">✕</button>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // Already dismissed this session?
+    if (sessionStorage.getItem('netNoticeDismissed')) return;
+
+    function showNotice() {
+      var el = document.getElementById('networkNotice');
+      if (el) el.style.display = 'block';
+    }
+
+    // Check Network Information API
+    var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (conn) {
+      var slow = conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g';
+      var cellular = conn.type === 'cellular';
+      var saved = conn.saveData; // user has data saver on
+
+      if (slow || saved || (cellular && conn.effectiveType !== '4g')) {
+        showNotice();
+      }
+    }
+
+    // Also measure page load: if > 3s from navigation start, show notice
+    var perf = performance.getEntriesByType('navigation')[0];
+    if (perf && perf.duration > 3000) {
+      showNotice();
+    }
+
+    // Extra timing check: fetch a small resource
+    var start = Date.now();
+    fetch('/favicon.ico', { cache: 'force-cache' }).then(function() {
+      var elapsed = Date.now() - start;
+      if (elapsed > 2000) showNotice();
+    });
+
+    // Close button
+    var closeBtn = document.getElementById('networkNoticeClose');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function() {
+        var el = document.getElementById('networkNotice');
+        if (el) el.style.display = 'none';
+        sessionStorage.setItem('netNoticeDismissed', '1');
+      });
+    }
+  })();
+</script>

@@ -58,6 +58,7 @@
     var open = false;
 
     fetch('/playlist-selected.json')
+      .catch(function() { return fetch('/playlist.json'); })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         playlist = d;
