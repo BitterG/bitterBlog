@@ -44,6 +44,7 @@ const { Content } = await post.render();
 
 <script>
   document.querySelectorAll('.post-content pre').forEach(function(pre) {
+    // 复制按钮
     var btn = document.createElement('button');
     btn.className = 'copy-btn';
     btn.textContent = '复制';
@@ -61,5 +62,40 @@ const { Content } = await post.render();
     });
     pre.style.position = 'relative';
     pre.appendChild(btn);
+
+    // 长代码块折叠（超过 30 行默认折叠）
+    var code = pre.querySelector('code');
+    var content = code ? code.textContent : pre.textContent;
+    var lines = content.split('\n').length;
+    if (lines > 30) {
+      var wrapper = document.createElement('div');
+      wrapper.className = 'code-collapse';
+      wrapper.style.position = 'relative';
+      pre.parentNode.insertBefore(wrapper, pre);
+      wrapper.appendChild(pre);
+
+      // 折叠状态
+      pre.style.maxHeight = '480px';
+      pre.style.overflow = 'hidden';
+      pre.style.transition = 'max-height 0.4s ease';
+
+      var toggle = document.createElement('button');
+      toggle.className = 'code-toggle';
+      toggle.textContent = '展开 (' + lines + ' 行)';
+      toggle.addEventListener('click', function() {
+        if (pre.style.maxHeight === '480px') {
+          pre.style.maxHeight = 'none';
+          wrapper.classList.add('expanded');
+          toggle.textContent = '折叠';
+          toggle.classList.add('expanded');
+        } else {
+          pre.style.maxHeight = '480px';
+          wrapper.classList.remove('expanded');
+          toggle.textContent = '展开 (' + lines + ' 行)';
+          toggle.classList.remove('expanded');
+        }
+      });
+      wrapper.appendChild(toggle);
+    }
   });
 </script>
