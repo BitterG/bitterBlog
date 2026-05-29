@@ -150,6 +150,52 @@
   color: var(--cyan);
 }
 
+/* 代码块折叠 */
+.post-content .code-collapse {
+  position: relative;
+}
+
+.post-content .code-collapse::after {
+  content: '';
+  position: absolute;
+  bottom: 44px;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: linear-gradient(transparent, var(--canvas-soft-2));
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.post-content .code-toggle {
+  display: block;
+  width: 100%;
+  padding: 10px 0;
+  margin-top: -4px;
+  border: none;
+  border-top: 1px solid var(--hairline);
+  border-radius: 0 0 var(--rounded-sm) var(--rounded-sm);
+  background: var(--canvas-soft);
+  color: var(--mute);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.post-content .code-toggle:hover {
+  background: var(--canvas-soft-2);
+  color: var(--body);
+}
+
+.post-content .code-toggle.expanded {
+  border-radius: 0;
+}
+
+.post-content .code-collapse.expanded::after {
+  display: none;
+}
+
 .post-content pre code {
   font-family: var(--font-mono);
   font-size: 13px;
