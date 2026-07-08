@@ -3,125 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>bitterBlog — 技术博客</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <title>字节编辑器</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Navigation Bar -->
-  <nav class="nav-bar" id="navBar">
-    <div class="nav-inner">
-      <a href="/" class="nav-logo">bitterBlog</a>
-      <ul class="nav-links" id="navLinks">
-        <li><a href="/" class="nav-link active">首页</a></li>
-        <li><a href="#" class="nav-link">分类</a></li>
-        <li><a href="#" class="nav-link">关于</a></li>
-        <li><a href="#" class="nav-link">归档</a></li>
-      </ul>
-      <div class="nav-actions">
-        <button class="nav-cta-ask-ai" aria-label="搜索">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-            <circle cx="7" cy="7" r="4.5"/>
-            <path d="M10.5 10.5L14 14"/>
-          </svg>
-        </button>
-        <button class="nav-cta-login">登录</button>
-        <button class="nav-cta-signup">订阅</button>
+  <main class="app-shell">
+    <section class="panel hero-panel">
+      <div>
+        <p class="eyebrow">Binary Byte Editor</p>
+        <h1>GBFR 存档转换器</h1>
+        <p class="lead">拖入存档或选择文件，输入 Steam ID 后按 gbfr-tool 逻辑写入第 5 到第 12 字节。</p>
       </div>
-      <button class="nav-hamburger" id="hamburgerBtn" aria-label="菜单">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-    </div>
-  </nav>
+      <label class="drop-zone" id="dropZone">
+        <input id="fileInput" type="file" hidden>
+        <span class="drop-icon">+</span>
+        <span class="drop-title">拖拽文件到这里</span>
+        <span class="drop-subtitle">或点击选择本地文件</span>
+      </label>
+    </section>
 
-  <!-- Mobile Menu Overlay -->
-  <div class="mobile-menu" id="mobileMenu">
-    <ul class="mobile-nav-links">
-      <li><a href="/" class="mobile-nav-link active">首页</a></li>
-      <li><a href="#" class="mobile-nav-link">分类</a></li>
-      <li><a href="#" class="mobile-nav-link">关于</a></li>
-      <li><a href="#" class="mobile-nav-link">归档</a></li>
-    </ul>
-    <div class="mobile-nav-actions">
-      <button class="nav-cta-login">登录</button>
-      <button class="nav-cta-signup">订阅</button>
-    </div>
-  </div>
-
-  <!-- Hero Band -->
-  <section class="hero-band">
-    <div class="hero-gradient"></div>
-    <div class="hero-content">
-      <p class="hero-eyebrow caption-mono">EXPLORE &middot; LEARN &middot; BUILD</p>
-      <h1 class="hero-title display-xl">技术探索与思考.</h1>
-      <p class="hero-lead body-lg">
-        记录前端、后端与系统设计中的实践与感悟，
-        在代码与文字之间寻找优雅的平衡&#40;bushi。
-      </p>
-      <div class="hero-search">
-        <div class="form-input-wrapper">
-          <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-            <circle cx="7" cy="7" r="4.5"/>
-            <path d="M10.5 10.5L14 14"/>
-          </svg>
-          <input
-            type="text"
-            class="form-input"
-            id="searchInput"
-            placeholder="搜索文章..."
-            autocomplete="off"
-          >
+    <section class="panel editor-panel">
+      <div class="toolbar">
+        <div class="file-meta">
+          <span id="fileName">未选择文件</span>
+          <span id="fileSize">0 bytes</span>
+        </div>
+        <div class="edit-controls">
+          <label class="number-field">
+            <span>Steam ID</span>
+            <input id="numberInput" type="text" inputmode="numeric" placeholder="例如 7656119...">
+          </label>
+          <button id="applyBtn" type="button" disabled>转换 Steam ID</button>
+          <button id="downloadBtn" type="button" disabled>下载修改后文件</button>
         </div>
       </div>
-    </div>
-  </section>
-
-  <!-- Articles Section -->
-  <section class="articles-section">
-    <div class="articles-header">
-      <h2 class="display-lg">最新文章.</h2>
-      <p class="body-md" style="color: var(--body)">共 <span id="articleCount">0</span> 篇文章</p>
-    </div>
-    <div class="articles-grid" id="articlesGrid">
-      <!-- Articles rendered by JS -->
-    </div>
-    <div class="articles-empty" id="articlesEmpty" style="display:none;">
-      <p class="body-lg" style="color: var(--mute)">没有找到匹配的文章.</p>
-    </div>
-    <div class="articles-footer" id="articlesFooter">
-      <button class="button-secondary" id="loadMoreBtn">加载更多</button>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <a href="/" class="footer-logo">bitterBlog</a>
-        <p class="caption" style="color: var(--mute)">技术探索与思考</p>
-      </div>
-      <div class="footer-links">
-        <div class="footer-col">
-          <span class="footer-col-label caption-mono">导航</span>
-          <a href="/" class="footer-link">首页</a>
-          <a href="#" class="footer-link">分类</a>
-          <a href="#" class="footer-link">归档</a>
-        </div>
-        <div class="footer-col">
-          <span class="footer-col-label caption-mono">关于</span>
-          <a href="#" class="footer-link">关于本站</a>
-          <a href="#" class="footer-link">RSS 订阅</a>
-        </div>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <span class="caption-mono" style="color: var(--mute)">&copy; 2026 bitterBlog</span>
-    </div>
-  </footer>
+      <p class="status" id="status">等待文件。</p>
+      <div class="hex-view" id="hexView" aria-label="文件字节十六进制视图"></div>
+    </section>
+  </main>
 
   <script src="script.js"></script>
 </body>

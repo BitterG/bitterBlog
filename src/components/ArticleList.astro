@@ -8,10 +8,21 @@ interface Props {
 }
 
 const { posts } = Astro.props;
-const totalCount = posts.length;
+const toolPost = {
+  slug: 'steam-id',
+  title: 'GBFR 存档转换器',
+  date: '2026-07-08',
+  category: '项目',
+  categoryId: 'projects',
+  tags: ['GBFR', 'Steam ID', '存档工具'],
+  excerpt: '按 gbfr-tool 逻辑把 Steam ID 转换为 i64 小端序 8 字节，并写入存档第 5 到第 12 字节。',
+  firstImage: null,
+  url: './tools/steam-id/',
+};
+const totalCount = posts.length + 1;
 
 // Serialize posts data for client-side search
-const serializedPosts = JSON.stringify(posts.map(p => {
+const serializedPosts = JSON.stringify([toolPost].concat(posts.map(p => {
   const bodyText = p.body ?? '';
   const excerpt = bodyText
     .replace(/^#{1,6}\s+/gm, '')
@@ -35,8 +46,9 @@ const serializedPosts = JSON.stringify(posts.map(p => {
     tags: p.data.tags || [],
     excerpt,
     firstImage,
+    url: './posts/' + p.slug + '/',
   };
-}));
+})));
 ---
 
 <section class="articles-section">
@@ -45,7 +57,27 @@ const serializedPosts = JSON.stringify(posts.map(p => {
     <p class="body-md" style="color: var(--body)">共 <span id="articleCount">{totalCount}</span> 篇文章</p>
   </div>
   <div class="articles-grid" id="articlesGrid">
-    {posts.slice(0, 6).map(post => <ArticleCard post={post} />)}
+    <article class="article-card tool-card">
+      <a class="article-card-image tool-card-image" href="/tools/steam-id/" aria-label="打开 GBFR 存档转换器">
+        <span class="tool-card-glyph">ID</span>
+      </a>
+      <div class="article-card-body">
+        <div class="article-card-tags">
+          <span class="article-card-tag">项目</span>
+          <span class="article-card-tag">GBFR</span>
+          <span class="article-card-tag">Steam ID</span>
+        </div>
+        <h3 class="article-card-title display-sm">
+          <a href="/tools/steam-id/">GBFR 存档转换器</a>
+        </h3>
+        <p class="article-card-excerpt body-sm">按 gbfr-tool 逻辑把 Steam ID 转换为 i64 小端序 8 字节，并写入存档第 5 到第 12 字节。</p>
+        <div class="article-card-meta">
+          <span class="article-card-date">2026-07-08</span>
+          <span class="article-card-category">项目</span>
+        </div>
+      </div>
+    </article>
+    {posts.slice(0, 5).map(post => <ArticleCard post={post} />)}
   </div>
   <div class="articles-empty" id="articlesEmpty" style="display:none;">
     <p class="body-lg" style="color: var(--mute)">没有找到匹配的文章.</p>
@@ -79,11 +111,13 @@ const serializedPosts = JSON.stringify(posts.map(p => {
       .map(function(t) { return '<span class="article-card-tag">' + t + '</span>'; })
       .join('');
     var imgSrc = post.firstImage || 'https://uapis.cn/api/v1/random/image?category=bq&type=ikun&_=' + post.slug;
-    var imageHTML = '<div class="article-card-image"><img src="' + imgSrc + '" alt="' + post.title + '" loading="lazy" /></div>';
-    return '<article class="article-card">' + imageHTML +
+    var imageHTML = post.slug === 'steam-id'
+      ? '<a class="article-card-image tool-card-image" href="' + post.url + '" aria-label="打开 GBFR 存档转换器"><span class="tool-card-glyph">ID</span></a>'
+      : '<div class="article-card-image"><img src="' + imgSrc + '" alt="' + post.title + '" loading="lazy" /></div>';
+    return '<article class="article-card' + (post.slug === 'steam-id' ? ' tool-card' : '') + '">' + imageHTML +
       '<div class="article-card-body">' +
         '<div class="article-card-tags">' + tagHTML + '</div>' +
-        '<h3 class="article-card-title display-sm"><a href="./posts/' + post.slug + '/">' + post.title + '</a></h3>' +
+        '<h3 class="article-card-title display-sm"><a href="' + post.url + '">' + post.title + '</a></h3>' +
         '<p class="article-card-excerpt body-sm">' + post.excerpt + '</p>' +
         '<div class="article-card-meta">' +
           '<span class="article-card-date">' + post.date + '</span>' +
