@@ -1273,6 +1273,23 @@ img {
   opacity: 0.4;
 }
 
+.tool-card-image {
+  background: linear-gradient(135deg, var(--primary), #2f2f2f);
+}
+
+.tool-card-glyph {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: var(--rounded-md);
+  color: var(--on-primary);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  background: rgba(255,255,255,0.08);
+}
+
 .article-card-body {
   padding: var(--space-lg);
 }
