@@ -19,9 +19,9 @@ dist/
 .DS_Store
 Thumbs.db
 
-# audio files (downloaded at build time)
-public/audio/
-public/playlist-selected.json
+# audio files (committed; refresh locally with `node scripts/download-audio.mjs`)
+# public/audio/
+# public/playlist-selected.json
 
 # logs
 *.log
