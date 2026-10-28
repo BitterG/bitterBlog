@@ -8,6 +8,8 @@ interface Props {
 }
 
 const { posts } = Astro.props;
+
+// 扁平化文章数据（工具卡和集合文章统一结构，方便排序和序列化）
 const toolPost = {
   slug: 'steam-id',
   title: 'GBFR 存档转换器',
@@ -19,10 +21,8 @@ const toolPost = {
   firstImage: null,
   url: './tools/steam-id/',
 };
-const totalCount = posts.length + 1;
 
-// Serialize posts data for client-side search
-const serializedPosts = JSON.stringify([toolPost].concat(posts.map(p => {
+const postCards = posts.map(p => {
   const bodyText = p.body ?? '';
   const excerpt = bodyText
     .replace(/^#{1,6}\s+/gm, '')
@@ -36,7 +36,6 @@ const serializedPosts = JSON.stringify([toolPost].concat(posts.map(p => {
     .replace(/\n+/g, ' ')
     .trim()
     .slice(0, 150);
-  const firstImage = bodyText.match(/!\[[^\]]*\]\(([^)]+)\)/)?.[1] ?? null;
   return {
     slug: p.slug,
     title: p.data.title,
@@ -45,10 +44,21 @@ const serializedPosts = JSON.stringify([toolPost].concat(posts.map(p => {
     categoryId: p.data.category,
     tags: p.data.tags || [],
     excerpt,
-    firstImage,
+    firstImage: bodyText.match(/!\[[^\]]*\]\(([^)]+)\)/)?.[1] ?? null,
     url: './posts/' + p.slug + '/',
   };
-})));
+});
+
+// 工具卡合并进文章列表，统一按日期降序排序（不再硬编码置顶）
+const allPosts = [toolPost].concat(postCards).sort((a, b) => {
+  const timeA = new Date(a.date).getTime();
+  const timeB = new Date(b.date).getTime();
+  return timeB - timeA;
+});
+const totalCount = allPosts.length;
+
+// Serialize posts data for client-side search
+const serializedPosts = JSON.stringify(allPosts);
 ---
 
 <section class="articles-section">
@@ -57,27 +67,32 @@ const serializedPosts = JSON.stringify([toolPost].concat(posts.map(p => {
     <p class="body-md" style="color: var(--body)">共 <span id="articleCount">{totalCount}</span> 篇文章</p>
   </div>
   <div class="articles-grid" id="articlesGrid">
-    <article class="article-card tool-card">
-      <a class="article-card-image tool-card-image" href="/tools/steam-id/" aria-label="打开 GBFR 存档转换器">
-        <span class="tool-card-glyph">ID</span>
-      </a>
-      <div class="article-card-body">
-        <div class="article-card-tags">
-          <span class="article-card-tag">项目</span>
-          <span class="article-card-tag">GBFR</span>
-          <span class="article-card-tag">Steam ID</span>
-        </div>
-        <h3 class="article-card-title display-sm">
-          <a href="/tools/steam-id/">GBFR 存档转换器</a>
-        </h3>
-        <p class="article-card-excerpt body-sm">按 gbfr-tool 逻辑把 Steam ID 转换为 i64 小端序 8 字节，并写入存档第 5 到第 12 字节。</p>
-        <div class="article-card-meta">
-          <span class="article-card-date">2026-07-08</span>
-          <span class="article-card-category">项目</span>
-        </div>
-      </div>
-    </article>
-    {posts.slice(0, 5).map(post => <ArticleCard post={post} />)}
+    {allPosts.slice(0, 6).map(post => (
+      post.slug === 'steam-id' ? (
+        <article class="article-card tool-card">
+          <a class="article-card-image tool-card-image" href="/tools/steam-id/" aria-label="打开 GBFR 存档转换器">
+            <span class="tool-card-glyph">ID</span>
+          </a>
+          <div class="article-card-body">
+            <div class="article-card-tags">
+              <span class="article-card-tag">项目</span>
+              <span class="article-card-tag">GBFR</span>
+              <span class="article-card-tag">Steam ID</span>
+            </div>
+            <h3 class="article-card-title display-sm">
+              <a href="/tools/steam-id/">GBFR 存档转换器</a>
+            </h3>
+            <p class="article-card-excerpt body-sm">按 gbfr-tool 逻辑把 Steam ID 转换为 i64 小端序 8 字节，并写入存档第 5 到第 12 字节。</p>
+            <div class="article-card-meta">
+              <span class="article-card-date">2026-07-08</span>
+              <span class="article-card-category">项目</span>
+            </div>
+          </div>
+        </article>
+      ) : (
+        <ArticleCard post={posts.find(p => p.slug === post.slug) as any} />
+      )
+    ))}
   </div>
   <div class="articles-empty" id="articlesEmpty" style="display:none;">
     <p class="body-lg" style="color: var(--mute)">没有找到匹配的文章.</p>
