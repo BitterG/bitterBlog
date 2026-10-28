@@ -152,10 +152,18 @@
       var saved = localStorage.getItem('musicTogglePos');
       if (saved) {
         var pos = JSON.parse(saved);
-        musicToggle.style.bottom = 'auto';
-        musicToggle.style.right = 'auto';
-        musicToggle.style.left = pos.left + 'px';
-        musicToggle.style.top = pos.top + 'px';
+        // 校验保存的位置在当前窗口内（防止拖出窗口后看不见）
+        if (pos.left >= 0 && pos.top >= 0 &&
+            pos.left <= window.innerWidth - 60 &&
+            pos.top <= window.innerHeight - 60) {
+          musicToggle.style.bottom = 'auto';
+          musicToggle.style.right = 'auto';
+          musicToggle.style.left = pos.left + 'px';
+          musicToggle.style.top = pos.top + 'px';
+        } else {
+          // 位置无效（拖出窗口外），清掉并用默认右下角
+          localStorage.removeItem('musicTogglePos');
+        }
       }
 
       musicToggle.addEventListener('mousedown', function(e) {
