@@ -1,5 +1,9 @@
 ---
-import { getCategoryName } from '../utils/categories';
+import {
+  getCategoryName,
+  resolvePostMajorCategories,
+  MAJOR_CATEGORY_MAP,
+} from '../utils/categories';
 
 export interface Post {
   slug: string;
@@ -7,6 +11,7 @@ export interface Post {
     title: string;
     date: string;
     category: string;
+    categories?: string[];
     tags?: string[];
   };
   body?: string;
@@ -14,10 +19,11 @@ export interface Post {
 
 interface Props {
   post: Post;
+  currentCategoryId?: string;
 }
 
-const { post } = Astro.props;
-const { title, date, category, tags = [] } = post.data;
+const { post, currentCategoryId } = Astro.props;
+const { title, date, category, categories = [], tags = [] } = post.data;
 
 // Generate excerpt from body (first 150 chars of plain text)
 const bodyText = post.body ?? '';
@@ -34,28 +40,72 @@ const excerpt = bodyText
   .trim()
   .slice(0, 150);
 
-const categoryName = getCategoryName(category);
+const subCategoryName = getCategoryName(category);
+const majorCatIds = resolvePostMajorCategories({
+  slug: post.slug,
+  title,
+  category,
+  categories,
+  tags,
+});
+const majorCats = majorCatIds.map((id) => MAJOR_CATEGORY_MAP[id]).filter(Boolean);
+const isCrossCategory = majorCats.length > 1;
 
 // Extract first image from body
 const firstImage = bodyText.match(/!\[[^\]]*\]\(([^)]+)\)/)?.[1] ?? null;
+
+const usedLabels = new Set(majorCats.map((c) => c.shortName.toLowerCase()));
+const extraTags = [subCategoryName, ...tags]
+  .filter((t) => {
+    const key = t.toLowerCase();
+    if (usedLabels.has(key)) return false;
+    usedLabels.add(key);
+    return true;
+  })
+  .slice(0, 3);
 ---
 
-<article class="article-card">
-  <div class="article-card-image">
-    <img src={firstImage || `https://uapis.cn/api/v1/random/image?category=bq&type=ikun&_=${post.slug}`} alt={title} loading="lazy" />
-  </div>
+<article
+  class="article-card"
+  data-subcat={subCategoryName}
+  data-tags={extraTags.join(',')}
+  data-title={title.toLowerCase()}
+>
+  <a href={`/posts/${post.slug}/`} class="article-card-image" aria-label={title}>
+    <img
+      src={firstImage || `https://uapis.cn/api/v1/random/image?category=bq&type=ikun&_=${post.slug}`}
+      alt={title}
+      loading="lazy"
+    />
+  </a>
   <div class="article-card-body">
     <div class="article-card-tags">
-      <span class="article-card-tag">{categoryName}</span>
-      {tags.filter(t => t !== categoryName && t !== category).slice(0, 3).map(tag => <span class="article-card-tag">{tag}</span>)}
+      {majorCats.map((cat) => (
+        <a
+          href={`/categories/${cat.id}/`}
+          class={`article-card-tag article-card-cat-badge ${
+            currentCategoryId === cat.id ? 'is-current' : ''
+          }`}
+        >
+          {cat.shortName}
+        </a>
+      ))}
+      {extraTags.map((tag) => (
+        <span class="article-card-tag">{tag}</span>
+      ))}
     </div>
     <h3 class="article-card-title display-sm">
-      <a href={`/posts/${post.slug}`}>{title}</a>
+      <a href={`/posts/${post.slug}/`}>{title}</a>
     </h3>
     <p class="article-card-excerpt body-sm">{excerpt}</p>
     <div class="article-card-meta">
       <span class="article-card-date">{date}</span>
-      <span class="article-card-category">{categoryName}</span>
+      <span class="article-card-category">{subCategoryName}</span>
+      {isCrossCategory && (
+        <span class="article-card-cross-badge caption-mono" title={`跨分类：${majorCats.map(c => c.shortName).join(' / ')}`}>
+          跨 {majorCats.length} 类
+        </span>
+      )}
     </div>
   </div>
 </article>

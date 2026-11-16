@@ -1,3 +1,7 @@
+---
+import { MAJOR_CATEGORIES } from '../utils/categories';
+---
+
 <nav class="nav-bar" id="navBar">
   <div class="nav-inner">
     <a href="/" class="nav-logo">bitterBlog</a>
@@ -6,7 +10,11 @@
       <li>
         <span class="nav-link" id="categoryBtn">分类</span>
         <div class="category-dropdown" id="categoryDropdown">
-          <div class="category-dropdown-inner" id="categoryList"></div>
+          <div class="category-dropdown-inner" id="categoryList">
+            {MAJOR_CATEGORIES.map((c) => (
+              <a href={`/categories/${c.id}/`} class="category-chip">{c.name}</a>
+            ))}
+          </div>
         </div>
       </li>
       <li><a href="#" class="nav-link" id="aboutBtn">关于</a></li>
@@ -54,7 +62,11 @@
       <span class="display-sm">所有分类</span>
       <button class="category-overlay-close" id="categoryOverlayClose">✕</button>
     </div>
-    <div class="category-grid" id="categoryGrid"></div>
+    <div class="category-grid" id="categoryGrid">
+      {MAJOR_CATEGORIES.map((c) => (
+        <a href={`/categories/${c.id}/`} class="category-chip">{c.name}</a>
+      ))}
+    </div>
   </div>
 </div>
 
@@ -79,43 +91,10 @@
 
 <script>
   // ============================================
-  // Category data
-  // ============================================
-  var categories = [
-    { id: 'dbhknw', name: 'Android 内核' },
-    { id: 'koo1se', name: 'eBPF' },
-    { id: 'nohhgp', name: 'Windows' },
-    { id: 'frida', name: 'Frida Android' },
-    { id: 'lsposed', name: 'LSPosed' },
-    { id: 'java-proxy', name: 'Java 代理' },
-    { id: 'jvm', name: 'JVM' },
-    { id: 'nio', name: 'Java NIO' },
-    { id: 'netty', name: 'Netty' },
-    { id: 'rabbitmq', name: 'RabbitMQ' },
-    { id: 'zookeeper', name: 'ZooKeeper' },
-    { id: 'mongodb', name: 'MongoDB' },
-    { id: 'log4j2', name: 'Log4j2' },
-    { id: 'spring-interceptor', name: 'Spring 拦截器' },
-    { id: 'spring-exception', name: 'Spring 异常处理' },
-    { id: 'juc', name: 'JUC' },
-    { id: 'projects', name: '项目' }
-  ];
-
-  function renderCategoryLinks(container) {
-    var html = '';
-    categories.forEach(function(c) {
-      html += '<a href="/?category=' + c.id + '" class="category-chip">' + c.name + '</a>';
-    });
-    container.innerHTML = html;
-  }
-
-  // ============================================
   // Category Dropdown (desktop)
   // ============================================
   var categoryBtn = document.getElementById('categoryBtn');
   var categoryDropdown = document.getElementById('categoryDropdown');
-  var categoryList = document.getElementById('categoryList');
-  if (categoryList) renderCategoryLinks(categoryList);
 
   if (categoryBtn && categoryDropdown) {
     categoryBtn.addEventListener('click', function(e) {
@@ -131,11 +110,8 @@
   // Category Overlay (mobile / click "分类" opens overlay)
   // ============================================
   var categoryOverlay = document.getElementById('categoryOverlay');
-  var categoryGrid = document.getElementById('categoryGrid');
   var categoryOverlayClose = document.getElementById('categoryOverlayClose');
   var mobileCategoryBtn = document.getElementById('mobileCategoryBtn');
-
-  if (categoryGrid) renderCategoryLinks(categoryGrid);
 
   function openCategoryOverlay() {
     if (categoryOverlay) categoryOverlay.classList.add('open');

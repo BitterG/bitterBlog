@@ -1,7 +1,12 @@
 ---
 import ArticleCard from './ArticleCard.astro';
 import type { Post } from './ArticleCard.astro';
-import { getCategoryName } from '../utils/categories';
+import {
+  getCategoryName,
+  MAJOR_CATEGORIES,
+  MAJOR_CATEGORY_MAP,
+  resolvePostMajorCategories,
+} from '../utils/categories';
 
 interface Props {
   posts: Post[];
@@ -9,20 +14,22 @@ interface Props {
 
 const { posts } = Astro.props;
 
-// 扁平化文章数据（工具卡和集合文章统一结构，方便排序和序列化）
+// 扁平化文章数据（工具卡和集合文章统一结构，方便分类聚合、排序和搜索）
 const toolPost = {
   slug: 'steam-id',
   title: 'GBFR 存档转换器',
   date: '2026-07-08',
   category: '项目',
   categoryId: 'projects',
+  majorCatIds: ['projects', 'game'],
+  majorCatNames: ['项目', '游戏'],
   tags: ['GBFR', 'Steam ID', '存档工具'],
   excerpt: '按 gbfr-tool 逻辑把 Steam ID 转换为 i64 小端序 8 字节，并写入存档第 5 到第 12 字节。',
   firstImage: null,
-  url: './tools/steam-id/',
+  url: '/tools/steam-id/',
 };
 
-const postCards = posts.map(p => {
+const postCards = posts.map((p) => {
   const bodyText = p.body ?? '';
   const excerpt = bodyText
     .replace(/^#{1,6}\s+/gm, '')
@@ -36,20 +43,31 @@ const postCards = posts.map(p => {
     .replace(/\n+/g, ' ')
     .trim()
     .slice(0, 150);
+
+  const majorCatIds = resolvePostMajorCategories({
+    slug: p.slug,
+    title: p.data.title,
+    category: p.data.category,
+    categories: p.data.categories,
+    tags: p.data.tags,
+  });
+
   return {
     slug: p.slug,
     title: p.data.title,
     date: p.data.date,
     category: getCategoryName(p.data.category),
     categoryId: p.data.category,
+    majorCatIds,
+    majorCatNames: majorCatIds.map((id) => MAJOR_CATEGORY_MAP[id]?.shortName || id),
     tags: p.data.tags || [],
     excerpt,
     firstImage: bodyText.match(/!\[[^\]]*\]\(([^)]+)\)/)?.[1] ?? null,
-    url: './posts/' + p.slug + '/',
+    url: `/posts/${p.slug}/`,
   };
 });
 
-// 工具卡合并进文章列表，统一按日期降序排序（不再硬编码置顶）
+// 工具卡合并进文章列表，按日期降序排序
 const allPosts = [toolPost].concat(postCards).sort((a, b) => {
   const timeA = new Date(a.date).getTime();
   const timeB = new Date(b.date).getTime();
@@ -57,89 +75,288 @@ const allPosts = [toolPost].concat(postCards).sort((a, b) => {
 });
 const totalCount = allPosts.length;
 
-// Serialize posts data for client-side search
+// 为每个大类聚合文章（包含跨类文章）
+const categoryGroups = MAJOR_CATEGORIES.map((cat) => {
+  const matchedPosts = allPosts.filter((p) => p.majorCatIds.includes(cat.id));
+  const crossPostsCount = matchedPosts.filter((p) => p.majorCatIds.length > 1).length;
+  return {
+    ...cat,
+    count: matchedPosts.length,
+    crossCount: crossPostsCount,
+    latestPosts: matchedPosts.slice(0, 4),
+  };
+});
+
+// Serialize posts data for client-side search & "全部文章" mode
 const serializedPosts = JSON.stringify(allPosts);
 ---
 
 <section class="articles-section">
   <div class="articles-header">
-    <h2 class="display-lg">最新文章.</h2>
-    <p class="body-md" style="color: var(--body)">共 <span id="articleCount">{totalCount}</span> 篇文章</p>
+    <div>
+      <h2 class="display-lg" id="sectionTitle">文章分类.</h2>
+      <p class="body-sm" style="color: var(--mute); margin-top: 4px;" id="sectionSubtitle">
+        按技术专题整理归档，跨领域文章会同时出现在多个相关分类中
+      </p>
+    </div>
+    <div class="articles-header-right">
+      <p class="body-sm" style="color: var(--body)">
+        共 <strong>{MAJOR_CATEGORIES.length}</strong> 个分类 · <strong id="articleCount">{totalCount}</strong> 篇文章
+      </p>
+      <div class="view-mode-tabs" role="tablist" aria-label="浏览视图切换">
+        <button type="button" class="view-mode-tab active" id="tabCategories" data-mode="categories">
+          分类导航
+        </button>
+        <button type="button" class="view-mode-tab" id="tabAllPosts" data-mode="posts">
+          最新文章
+        </button>
+      </div>
+    </div>
   </div>
-  <div class="articles-grid" id="articlesGrid">
-    {allPosts.slice(0, 6).map(post => (
-      post.slug === 'steam-id' ? (
-        <article class="article-card tool-card">
-          <a class="article-card-image tool-card-image" href="/tools/steam-id/" aria-label="打开 GBFR 存档转换器">
-            <span class="tool-card-glyph">ID</span>
-          </a>
-          <div class="article-card-body">
-            <div class="article-card-tags">
-              <span class="article-card-tag">项目</span>
-              <span class="article-card-tag">GBFR</span>
-              <span class="article-card-tag">Steam ID</span>
+
+  <!-- 视图 1：文章分类卡片网格（默认主页展示） -->
+  <div class="categories-showcase-grid" id="categoriesShowcaseGrid">
+    {categoryGroups.map((cat) => (
+      <article class="category-showcase-card">
+        <a href={`/categories/${cat.id}/`} class="category-card-top-link">
+          <div class="category-card-eyebrow-row">
+            <div class="category-card-glyph-wrap">
+              <span class="category-card-glyph">{cat.glyph}</span>
+              <span class="caption-mono category-card-eyebrow">{cat.eyebrow}</span>
             </div>
-            <h3 class="article-card-title display-sm">
-              <a href="/tools/steam-id/">GBFR 存档转换器</a>
-            </h3>
-            <p class="article-card-excerpt body-sm">按 gbfr-tool 逻辑把 Steam ID 转换为 i64 小端序 8 字节，并写入存档第 5 到第 12 字节。</p>
-            <div class="article-card-meta">
-              <span class="article-card-date">2026-07-08</span>
-              <span class="article-card-category">项目</span>
+            <div class="category-card-badges">
+              {cat.crossCount > 0 && (
+                <span class="category-card-cross-pill" title={`包含 ${cat.crossCount} 篇跨分类文章`}>
+                  +{cat.crossCount} 跨类
+                </span>
+              )}
+              <span class="category-card-count-pill">{cat.count} 篇</span>
             </div>
           </div>
-        </article>
-      ) : (
-        <ArticleCard post={posts.find(p => p.slug === post.slug) as any} />
-      )
+
+          <h3 class="display-md category-card-title">{cat.name}</h3>
+          <p class="body-sm category-card-desc">{cat.description}</p>
+
+          <div class="category-card-topics">
+            {cat.topics.map((topic) => (
+              <span class="category-topic-tag">{topic}</span>
+            ))}
+          </div>
+        </a>
+
+        <div class="category-card-preview">
+          <div class="category-preview-header caption-mono">
+            <span>RECENT IN {cat.shortName.toUpperCase()}</span>
+          </div>
+          <ul class="category-preview-list">
+            {cat.latestPosts.map((post) => (
+              <li class="category-preview-item">
+                <a href={post.url} class="category-preview-link" title={post.title}>
+                  <span class="category-preview-title">{post.title}</span>
+                  <span class="category-preview-meta">
+                    {post.majorCatIds.length > 1 && (
+                      <span class="category-preview-cross" title={`同时归属：${post.majorCatNames.join(' / ')}`}>
+                        跨类
+                      </span>
+                    )}
+                    <span class="category-preview-date caption-mono">{post.date.slice(5)}</span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <a href={`/categories/${cat.id}/`} class="category-card-footer-cta">
+          <span>查看该分类全部 {cat.count} 篇文章</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 4l4 4-4 4" />
+          </svg>
+        </a>
+      </article>
     ))}
   </div>
-  <div class="articles-empty" id="articlesEmpty" style="display:none;">
-    <p class="body-lg" style="color: var(--mute)">没有找到匹配的文章.</p>
-  </div>
-  {totalCount > 6 && (
-    <div class="articles-footer" id="articlesFooter">
-      <button class="button-secondary" id="loadMoreBtn">加载更多</button>
+
+  <!-- 视图 2：文章列表网格（搜索时或切换至“最新文章”时展示） -->
+  <div id="allPostsContainer" style="display: none;">
+    <div class="articles-grid" id="articlesGrid">
+      {allPosts.slice(0, 6).map((post) =>
+        post.slug === 'steam-id' ? (
+          <article class="article-card tool-card">
+            <a class="article-card-image tool-card-image" href="/tools/steam-id/" aria-label="打开 GBFR 存档转换器">
+              <span class="tool-card-glyph">ID</span>
+            </a>
+            <div class="article-card-body">
+              <div class="article-card-tags">
+                <a href="/categories/projects/" class="article-card-tag article-card-cat-badge">项目</a>
+                <a href="/categories/game/" class="article-card-tag article-card-cat-badge">游戏</a>
+                <span class="article-card-tag">GBFR</span>
+                <span class="article-card-tag">Steam ID</span>
+              </div>
+              <h3 class="article-card-title display-sm">
+                <a href="/tools/steam-id/">GBFR 存档转换器</a>
+              </h3>
+              <p class="article-card-excerpt body-sm">
+                按 gbfr-tool 逻辑把 Steam ID 转换为 i64 小端序 8 字节，并写入存档第 5 到第 12 字节。
+              </p>
+              <div class="article-card-meta">
+                <span class="article-card-date">2026-07-08</span>
+                <span class="article-card-category">项目</span>
+                <span class="article-card-cross-badge caption-mono">跨 2 类</span>
+              </div>
+            </div>
+          </article>
+        ) : (
+          <ArticleCard post={posts.find((p) => p.slug === post.slug) as any} />
+        )
+      )}
     </div>
-  )}
+    <div class="articles-empty" id="articlesEmpty" style="display:none;">
+      <p class="body-lg" style="color: var(--mute)">没有找到匹配的文章.</p>
+    </div>
+    {totalCount > 6 && (
+      <div class="articles-footer" id="articlesFooter">
+        <button class="button-secondary" id="loadMoreBtn">加载更多</button>
+      </div>
+    )}
+  </div>
 </section>
 
 <script define:vars={{ serializedPosts }}>
-  var PAGE_SIZE = 6;
+  var PAGE_SIZE = 9;
   var currentPage = 1;
 
   var allPosts = JSON.parse(serializedPosts);
-
   var filteredPosts = allPosts.slice();
 
   // DOM refs
   var searchInput = document.getElementById('searchInput');
+  var categoriesGrid = document.getElementById('categoriesShowcaseGrid');
+  var allPostsContainer = document.getElementById('allPostsContainer');
   var articlesGrid = document.getElementById('articlesGrid');
   var articlesEmpty = document.getElementById('articlesEmpty');
   var articlesFooter = document.getElementById('articlesFooter');
   var loadMoreBtn = document.getElementById('loadMoreBtn');
   var articleCount = document.getElementById('articleCount');
+  var sectionTitle = document.getElementById('sectionTitle');
+  var sectionSubtitle = document.getElementById('sectionSubtitle');
+  var tabCategories = document.getElementById('tabCategories');
+  var tabAllPosts = document.getElementById('tabAllPosts');
 
   function createArticleHTML(post) {
-    var dedupedTags = post.tags.filter(function(t) { return t !== post.category; }).slice(0, 3);
-    var tagHTML = [post.category].concat(dedupedTags)
-      .map(function(t) { return '<span class="article-card-tag">' + t + '</span>'; })
+    var catBadges = (post.majorCatIds || [])
+      .map(function (id, idx) {
+        var name = (post.majorCatNames && post.majorCatNames[idx]) || id;
+        return (
+          '<a href="/categories/' +
+          id +
+          '/" class="article-card-tag article-card-cat-badge">' +
+          name +
+          '</a>'
+        );
+      })
       .join('');
-    var imgSrc = post.firstImage || 'https://uapis.cn/api/v1/random/image?category=bq&type=ikun&_=' + post.slug;
-    var imageHTML = post.slug === 'steam-id'
-      ? '<a class="article-card-image tool-card-image" href="' + post.url + '" aria-label="打开 GBFR 存档转换器"><span class="tool-card-glyph">ID</span></a>'
-      : '<div class="article-card-image"><img src="' + imgSrc + '" alt="' + post.title + '" loading="lazy" /></div>';
-    return '<article class="article-card' + (post.slug === 'steam-id' ? ' tool-card' : '') + '">' + imageHTML +
+
+    var usedLower = (post.majorCatNames || []).map(function (n) {
+      return n.toLowerCase();
+    });
+    var extraTags = [post.category]
+      .concat(post.tags || [])
+      .filter(function (t) {
+        var k = t.toLowerCase();
+        if (usedLower.indexOf(k) !== -1) return false;
+        usedLower.push(k);
+        return true;
+      })
+      .slice(0, 3)
+      .map(function (t) {
+        return '<span class="article-card-tag">' + t + '</span>';
+      })
+      .join('');
+
+    var crossBadge =
+      post.majorCatIds && post.majorCatIds.length > 1
+        ? '<span class="article-card-cross-badge caption-mono" title="跨分类：' +
+          post.majorCatNames.join(' / ') +
+          '">跨 ' +
+          post.majorCatIds.length +
+          ' 类</span>'
+        : '';
+
+    var imgSrc =
+      post.firstImage ||
+      'https://uapis.cn/api/v1/random/image?category=bq&type=ikun&_=' + post.slug;
+    var imageHTML =
+      post.slug === 'steam-id'
+        ? '<a class="article-card-image tool-card-image" href="' +
+          post.url +
+          '" aria-label="打开 GBFR 存档转换器"><span class="tool-card-glyph">ID</span></a>'
+        : '<a class="article-card-image" href="' +
+          post.url +
+          '"><img src="' +
+          imgSrc +
+          '" alt="' +
+          post.title +
+          '" loading="lazy" /></a>';
+
+    return (
+      '<article class="article-card' +
+      (post.slug === 'steam-id' ? ' tool-card' : '') +
+      '">' +
+      imageHTML +
       '<div class="article-card-body">' +
-        '<div class="article-card-tags">' + tagHTML + '</div>' +
-        '<h3 class="article-card-title display-sm"><a href="' + post.url + '">' + post.title + '</a></h3>' +
-        '<p class="article-card-excerpt body-sm">' + post.excerpt + '</p>' +
-        '<div class="article-card-meta">' +
-          '<span class="article-card-date">' + post.date + '</span>' +
-          '<span class="article-card-category">' + post.category + '</span>' +
-        '</div>' +
+      '<div class="article-card-tags">' +
+      catBadges +
+      extraTags +
       '</div>' +
-    '</article>';
+      '<h3 class="article-card-title display-sm"><a href="' +
+      post.url +
+      '">' +
+      post.title +
+      '</a></h3>' +
+      '<p class="article-card-excerpt body-sm">' +
+      post.excerpt +
+      '</p>' +
+      '<div class="article-card-meta">' +
+      '<span class="article-card-date">' +
+      post.date +
+      '</span>' +
+      '<span class="article-card-category">' +
+      post.category +
+      '</span>' +
+      crossBadge +
+      '</div>' +
+      '</div>' +
+      '</article>'
+    );
+  }
+
+  function setViewMode(mode, isSearch) {
+    if (mode === 'categories') {
+      if (categoriesGrid) categoriesGrid.style.display = 'grid';
+      if (allPostsContainer) allPostsContainer.style.display = 'none';
+      if (tabCategories) tabCategories.classList.add('active');
+      if (tabAllPosts) tabAllPosts.classList.remove('active');
+      if (sectionTitle) sectionTitle.textContent = '文章分类.';
+      if (sectionSubtitle) {
+        sectionSubtitle.textContent =
+          '按技术专题整理归档，跨领域文章会同时出现在多个相关分类中';
+      }
+      if (articleCount) articleCount.textContent = String(allPosts.length);
+    } else {
+      if (categoriesGrid) categoriesGrid.style.display = 'none';
+      if (allPostsContainer) allPostsContainer.style.display = 'block';
+      if (tabCategories) tabCategories.classList.remove('active');
+      if (tabAllPosts) tabAllPosts.classList.add('active');
+      if (sectionTitle) {
+        sectionTitle.textContent = isSearch ? '搜索结果.' : '最新文章.';
+      }
+      if (sectionSubtitle) {
+        sectionSubtitle.textContent = isSearch
+          ? '按关键词匹配到的相关文章'
+          : '按发布与更新时间排序的全部文章';
+      }
+    }
   }
 
   function filterPosts(query) {
@@ -147,11 +364,19 @@ const serializedPosts = JSON.stringify(allPosts);
     if (!q) {
       filteredPosts = allPosts.slice();
     } else {
-      filteredPosts = allPosts.filter(function(p) {
-        return p.title.toLowerCase().indexOf(q) !== -1 ||
+      filteredPosts = allPosts.filter(function (p) {
+        return (
+          p.title.toLowerCase().indexOf(q) !== -1 ||
           p.excerpt.toLowerCase().indexOf(q) !== -1 ||
-          p.tags.some(function(t) { return t.toLowerCase().indexOf(q) !== -1; }) ||
-          p.category.toLowerCase().indexOf(q) !== -1;
+          p.tags.some(function (t) {
+            return t.toLowerCase().indexOf(q) !== -1;
+          }) ||
+          p.category.toLowerCase().indexOf(q) !== -1 ||
+          (p.majorCatNames &&
+            p.majorCatNames.some(function (n) {
+              return n.toLowerCase().indexOf(q) !== -1;
+            }))
+        );
       });
     }
   }
@@ -165,7 +390,7 @@ const serializedPosts = JSON.stringify(allPosts);
     var visible = filteredPosts.slice(startIdx, startIdx + PAGE_SIZE);
 
     if (reset && articlesGrid) {
-      visible.forEach(function(post) {
+      visible.forEach(function (post) {
         articlesGrid.insertAdjacentHTML('beforeend', createArticleHTML(post));
       });
     }
@@ -182,20 +407,42 @@ const serializedPosts = JSON.stringify(allPosts);
     }
   }
 
-  if (searchInput) {
-    searchInput.addEventListener('input', function() {
+  if (tabCategories) {
+    tabCategories.addEventListener('click', function () {
+      if (searchInput) searchInput.value = '';
+      setViewMode('categories', false);
+    });
+  }
+
+  if (tabAllPosts) {
+    tabAllPosts.addEventListener('click', function () {
       currentPage = 1;
-      filterPosts(this.value);
+      filterPosts(searchInput ? searchInput.value : '');
+      setViewMode('posts', false);
+      renderPage(true);
+    });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', function () {
+      var val = this.value.trim();
+      if (!val) {
+        setViewMode('categories', false);
+        return;
+      }
+      currentPage = 1;
+      filterPosts(val);
+      setViewMode('posts', true);
       renderPage(true);
     });
   }
 
   if (loadMoreBtn) {
-    loadMoreBtn.addEventListener('click', function() {
+    loadMoreBtn.addEventListener('click', function () {
       currentPage++;
       var startIdx = (currentPage - 1) * PAGE_SIZE;
       var newPosts = filteredPosts.slice(startIdx, startIdx + PAGE_SIZE);
-      newPosts.forEach(function(post) {
+      newPosts.forEach(function (post) {
         if (articlesGrid) {
           articlesGrid.insertAdjacentHTML('beforeend', createArticleHTML(post));
         }
@@ -207,15 +454,18 @@ const serializedPosts = JSON.stringify(allPosts);
     });
   }
 
-  // Init: apply category filter from URL param
+  // 兼容旧版 ?category=xxx 参数访问
   var urlParams = new URLSearchParams(window.location.search);
   var catFilter = urlParams.get('category');
   if (catFilter) {
-    filteredPosts = allPosts.filter(function(p) { return p.categoryId === catFilter; });
+    filteredPosts = allPosts.filter(function (p) {
+      return (
+        p.categoryId === catFilter ||
+        (p.majorCatIds && p.majorCatIds.indexOf(catFilter) !== -1)
+      );
+    });
+    currentPage = 1;
+    setViewMode('posts', false);
     renderPage(true);
-    if (filteredPosts.length === 0 && articlesEmpty) {
-      articlesEmpty.innerHTML = '<p class="body-lg" style="color:var(--mute)">该分类下暂无文章.</p>';
-      articlesEmpty.style.display = 'block';
-    }
   }
 </script>

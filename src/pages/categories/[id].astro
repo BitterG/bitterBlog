@@ -1,0 +1,291 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import NavBar from '../../components/NavBar.astro';
+import Footer from '../../components/Footer.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import { getCollection } from 'astro:content';
+import {
+  MAJOR_CATEGORIES,
+  getCategoryName,
+  resolvePostMajorCategories,
+  MAJOR_CATEGORY_MAP,
+  type MajorCategory,
+} from '../../utils/categories';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+
+  // Sort by date / updated descending
+  const sortedPosts = posts.sort((a, b) => {
+    const timeA = new Date(a.data.updated || a.data.date).getTime();
+    const timeB = new Date(b.data.updated || b.data.date).getTime();
+    return timeB - timeA;
+  });
+
+  return MAJOR_CATEGORIES.map((category) => {
+    const categoryPosts = sortedPosts.filter((p) => {
+      const catIds = resolvePostMajorCategories({
+        slug: p.slug,
+        title: p.data.title,
+        category: p.data.category,
+        categories: p.data.categories,
+        tags: p.data.tags,
+      });
+      return catIds.includes(category.id);
+    });
+
+    // Include the Steam ID tool card if category is 'projects' or 'game'
+    const includeSteamTool = category.id === 'projects' || category.id === 'game';
+
+    return {
+      params: { id: category.id },
+      props: {
+        category,
+        posts: categoryPosts,
+        includeSteamTool,
+      },
+    };
+  });
+}
+
+interface Props {
+  category: MajorCategory;
+  posts: any[];
+  includeSteamTool: boolean;
+}
+
+const { category, posts, includeSteamTool } = Astro.props;
+const totalCount = posts.length + (includeSteamTool ? 1 : 0);
+
+// 统计跨分类文章数量与二级细分标签
+let crossCount = includeSteamTool ? 1 : 0;
+const subCategoryCounts = new Map<string, number>();
+
+for (const p of posts) {
+  const catIds = resolvePostMajorCategories({
+    slug: p.slug,
+    title: p.data.title,
+    category: p.data.category,
+    categories: p.data.categories,
+    tags: p.data.tags,
+  });
+  if (catIds.length > 1) crossCount++;
+
+  const subName = getCategoryName(p.data.category);
+  subCategoryCounts.set(subName, (subCategoryCounts.get(subName) || 0) + 1);
+}
+
+if (includeSteamTool) {
+  subCategoryCounts.set('项目', (subCategoryCounts.get('项目') || 0) + 1);
+}
+
+const subFilters = Array.from(subCategoryCounts.entries())
+  .sort((a, b) => b[1] - a[1]);
+---
+
+<BaseLayout title={`${category.name} — 分类文章`} description={category.description}>
+  <NavBar />
+
+  <section class="category-hero-band">
+    <div class="hero-gradient"></div>
+    <div class="category-hero-inner">
+      <div class="category-breadcrumb">
+        <a href="/" class="category-back-link">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 12L6 8l4-4" />
+          </svg>
+          返回分类导航
+        </a>
+        <span class="category-breadcrumb-sep">/</span>
+        <span class="caption-mono">{category.eyebrow}</span>
+      </div>
+
+      <div class="category-title-row">
+        <span class="category-hero-glyph">{category.glyph}</span>
+        <div>
+          <h1 class="display-lg category-page-title">{category.name}.</h1>
+          <p class="body-md category-page-desc">{category.description}</p>
+        </div>
+      </div>
+
+      <div class="category-stats-row">
+        <span class="category-stat-pill">
+          共 <strong id="catVisibleCount">{totalCount}</strong> 篇文章
+        </span>
+        {crossCount > 0 && (
+          <span class="category-stat-pill category-stat-cross">
+            含 {crossCount} 篇跨类文章
+          </span>
+        )}
+      </div>
+
+      <!-- 顶部分类快速切换栏 -->
+      <div class="category-switcher-bar" role="navigation" aria-label="切换文章分类">
+        <a href="/" class="category-switch-pill">
+          全部概览
+        </a>
+        {MAJOR_CATEGORIES.map((cat) => (
+          <a
+            href={`/categories/${cat.id}/`}
+            class={`category-switch-pill ${cat.id === category.id ? 'active' : ''}`}
+          >
+            <span>{cat.shortName}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="articles-section category-articles-section">
+    <!-- 二级细分筛选 + 分类内搜索 -->
+    <div class="category-controls-bar">
+      {subFilters.length > 1 ? (
+        <div class="category-subfilter-row" id="subFilterRow">
+          <button type="button" class="subfilter-chip active" data-subfilter="all">
+            全部 <span class="subfilter-count">{totalCount}</span>
+          </button>
+          {subFilters.map(([subName, count]) => (
+            <button type="button" class="subfilter-chip" data-subfilter={subName}>
+              {subName} <span class="subfilter-count">{count}</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div class="category-subfilter-row">
+          <span class="caption-mono" style="color: var(--mute)">ALL ARTICLES IN {category.eyebrow}</span>
+        </div>
+      )}
+
+      <div class="category-search-box">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="7" cy="7" r="4.5" />
+          <path d="M10.5 10.5L14 14" />
+        </svg>
+        <input
+          type="text"
+          class="form-input category-search-input"
+          id="categorySearchInput"
+          placeholder={`在 ${category.shortName} 分类中搜索...`}
+          autocomplete="off"
+        />
+      </div>
+    </div>
+
+    <div class="articles-grid" id="categoryArticlesGrid">
+      {includeSteamTool && (
+        <article
+          class="article-card tool-card"
+          data-subcat="项目"
+          data-tags="GBFR,Steam ID,存档工具"
+          data-title="gbfr 存档转换器 steam id"
+        >
+          <a class="article-card-image tool-card-image" href="/tools/steam-id/" aria-label="打开 GBFR 存档转换器">
+            <span class="tool-card-glyph">ID</span>
+          </a>
+          <div class="article-card-body">
+            <div class="article-card-tags">
+              <a
+                href="/categories/projects/"
+                class={`article-card-tag article-card-cat-badge ${category.id === 'projects' ? 'is-current' : ''}`}
+              >
+                项目
+              </a>
+              <a
+                href="/categories/game/"
+                class={`article-card-tag article-card-cat-badge ${category.id === 'game' ? 'is-current' : ''}`}
+              >
+                游戏
+              </a>
+              <span class="article-card-tag">GBFR</span>
+              <span class="article-card-tag">Steam ID</span>
+            </div>
+            <h3 class="article-card-title display-sm">
+              <a href="/tools/steam-id/">GBFR 存档转换器</a>
+            </h3>
+            <p class="article-card-excerpt body-sm">
+              按 gbfr-tool 逻辑把 Steam ID 转换为 i64 小端序 8 字节，并写入存档第 5 到第 12 字节。
+            </p>
+            <div class="article-card-meta">
+              <span class="article-card-date">2026-07-08</span>
+              <span class="article-card-category">项目</span>
+              <span class="article-card-cross-badge caption-mono" title="跨分类：项目 / 游戏">
+                跨 2 类
+              </span>
+            </div>
+          </div>
+        </article>
+      )}
+      {posts.map((post) => (
+        <ArticleCard post={post} currentCategoryId={category.id} />
+      ))}
+    </div>
+
+    <div class="articles-empty" id="categoryArticlesEmpty" style="display:none;">
+      <p class="body-lg" style="color: var(--mute)">当前筛选条件下没有匹配的文章.</p>
+    </div>
+  </section>
+
+  <Footer />
+</BaseLayout>
+
+<script>
+  (function () {
+    var subFilterRow = document.getElementById('subFilterRow');
+    var searchInput = document.getElementById('categorySearchInput');
+    var grid = document.getElementById('categoryArticlesGrid');
+    var emptyEl = document.getElementById('categoryArticlesEmpty');
+    var countEl = document.getElementById('catVisibleCount');
+
+    if (!grid) return;
+
+    var cards = Array.prototype.slice.call(grid.querySelectorAll('.article-card'));
+    var activeSub = 'all';
+    var searchQuery = '';
+
+    function applyFilter() {
+      var visible = 0;
+      var q = searchQuery.toLowerCase().trim();
+
+      cards.forEach(function (card) {
+        var subcat = card.getAttribute('data-subcat') || '';
+        var title = card.getAttribute('data-title') || '';
+        var tags = (card.getAttribute('data-tags') || '').toLowerCase();
+        var text = (card.textContent || '').toLowerCase();
+
+        var matchSub = activeSub === 'all' || subcat === activeSub;
+        var matchQuery = !q || title.indexOf(q) !== -1 || tags.indexOf(q) !== -1 || text.indexOf(q) !== -1;
+
+        if (matchSub && matchQuery) {
+          card.style.display = '';
+          visible++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      if (countEl) countEl.textContent = String(visible);
+      if (emptyEl) emptyEl.style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    if (subFilterRow) {
+      var buttons = subFilterRow.querySelectorAll('.subfilter-chip');
+      buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          buttons.forEach(function (b) {
+            b.classList.remove('active');
+          });
+          btn.classList.add('active');
+          activeSub = btn.getAttribute('data-subfilter') || 'all';
+          applyFilter();
+        });
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', function () {
+        searchQuery = this.value || '';
+        applyFilter();
+      });
+    }
+  })();
+</script>
