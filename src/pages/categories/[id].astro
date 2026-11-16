@@ -34,6 +34,10 @@ export async function getStaticPaths() {
       return catIds.includes(category.id);
     });
 
+    if (category.id === 'agent') {
+      categoryPosts.sort((a, b) => a.slug.localeCompare(b.slug));
+    }
+
     // Include the Steam ID tool card if category is 'projects' or 'game'
     const includeSteamTool = category.id === 'projects' || category.id === 'game';
 

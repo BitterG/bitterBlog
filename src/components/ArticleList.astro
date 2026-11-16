@@ -78,12 +78,15 @@ const totalCount = allPosts.length;
 // 为每个大类聚合文章（包含跨类文章）
 const categoryGroups = MAJOR_CATEGORIES.map((cat) => {
   const matchedPosts = allPosts.filter((p) => p.majorCatIds.includes(cat.id));
+  if (cat.id === 'agent') {
+    matchedPosts.sort((a, b) => a.slug.localeCompare(b.slug));
+  }
   const crossPostsCount = matchedPosts.filter((p) => p.majorCatIds.length > 1).length;
   return {
     ...cat,
     count: matchedPosts.length,
     crossCount: crossPostsCount,
-    latestPosts: matchedPosts.slice(0, 4),
+    latestPosts: matchedPosts.slice(0, 5),
   };
 });
 

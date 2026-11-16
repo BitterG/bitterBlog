@@ -1,4 +1,5 @@
 export const CATEGORY_MAP: Record<string, string> = {
+  agent: 'Agent 实现原理（Claude code）',
   dbhknw: 'Android 内核',
   kb: 'Go',
   golang: 'Go',
@@ -36,6 +37,15 @@ export interface MajorCategory {
 }
 
 export const MAJOR_CATEGORIES: MajorCategory[] = [
+  {
+    id: 'agent',
+    name: 'Agent 实现原理（Claude code）',
+    shortName: 'Agent 原理',
+    eyebrow: 'CLAUDE CODE HARNESS',
+    glyph: 'AG',
+    description: '从零拆解 Claude Code 核心实现原理：Agent 主循环、工具调用分发、权限审查三道闸门、Hooks 解耦与 Todo 防遗忘提醒机制。',
+    topics: ['s01 Agent Loop', 's02 Tool Use', 's03 Permission', 's04 Hooks', 's05 Todo Write'],
+  },
   {
     id: 'frida',
     name: 'Frida 逆向',
@@ -149,6 +159,11 @@ export function resolvePostMajorCategories(post: CategorizablePost): string[] {
 
   const hasTag = (keywords: string[]) =>
     tags.some((t) => keywords.some((k) => t === k.toLowerCase() || t.includes(k.toLowerCase())));
+
+  // 0.5 Agent 实现原理（Claude code）
+  if (rawCat === 'agent' || hasTag(['claude code', 'agent loop', 'agent'])) {
+    matched.add('agent');
+  }
 
   // 1. Frida
   if (rawCat === 'frida' || hasTag(['frida']) || titleLower.includes('frida')) {
@@ -269,6 +284,7 @@ export function resolvePostMajorCategories(post: CategorizablePost): string[] {
   // 保持与 MAJOR_CATEGORIES 定义顺序一致，但将最匹配原 category 的主类排在第一位
   const ordered = MAJOR_CATEGORIES.map((c) => c.id).filter((id) => matched.has(id));
   const primaryMap: Record<string, string> = {
+    agent: 'agent',
     frida: 'frida',
     dbhknw: 'android',
     lsposed: 'android',
