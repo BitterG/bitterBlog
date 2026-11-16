@@ -1,0 +1,484 @@
+---
+export interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+export interface Props {
+  headings?: Heading[];
+}
+
+const { headings = [] } = Astro.props;
+
+// 只保留 1、2、3 级标题
+const tocHeadings = headings.filter((h) => h.depth >= 1 && h.depth <= 3);
+
+interface TocNode extends Heading {
+  children: TocNode[];
+}
+
+// 构建树形结构（支持 1、2、3 级标题嵌套与折叠）
+function buildTocTree(list: Heading[]): TocNode[] {
+  const roots: TocNode[] = [];
+  const stack: TocNode[] = [];
+
+  for (const item of list) {
+    const node: TocNode = { ...item, children: [] };
+    while (stack.length > 0 && stack[stack.length - 1].depth >= node.depth) {
+      stack.pop();
+    }
+    if (stack.length === 0) {
+      roots.push(node);
+    } else {
+      stack[stack.length - 1].children.push(node);
+    }
+    stack.push(node);
+  }
+  return roots;
+}
+
+const tocTree = buildTocTree(tocHeadings);
+const hasNested = tocTree.some((n) => n.children.length > 0);
+---
+
+<div class="toc-wrapper" id="tocWrapper" data-has-headings={tocHeadings.length > 0 ? 'true' : 'false'}>
+  <!-- 折叠状态下的左侧展开按钮 -->
+  <button
+    type="button"
+    class="toc-trigger"
+    id="tocExpandBtn"
+    aria-label="展开文章目录"
+    title="展开目录"
+  >
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <path d="M2.5 4h11M2.5 8h7.5M2.5 12h9.5" />
+    </svg>
+    <span class="toc-trigger-label">目录</span>
+    <span class="toc-trigger-progress caption-mono" id="tocTriggerProgress">0%</span>
+  </button>
+
+  <!-- 移动端遮罩 -->
+  <div class="toc-backdrop" id="tocBackdrop"></div>
+
+  <!-- 左侧目录面板 -->
+  <aside class="toc-sidebar" id="tocSidebar" aria-label="文章目录">
+    <div class="toc-header">
+      <div class="toc-header-title">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M2.5 4h11M2.5 8h7.5M2.5 12h9.5" />
+        </svg>
+        <span>目录</span>
+        <span class="toc-progress-text caption-mono" id="tocProgressText">0%</span>
+      </div>
+      <div class="toc-header-actions">
+        {hasNested && (
+          <button
+            type="button"
+            class="toc-action-btn"
+            id="tocFoldAllBtn"
+            aria-label="折叠或展开全部子标题"
+            title="折叠全部子章节"
+            data-folded="false"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 6l4 4 4-4" />
+            </svg>
+          </button>
+        )}
+        <button
+          type="button"
+          class="toc-action-btn"
+          id="tocCollapseBtn"
+          aria-label="收起文章目录"
+          title="收起目录"
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 3L5 8l5 5" />
+            <path d="M13 3v10" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="toc-progress-bar">
+      <div class="toc-progress-fill" id="tocProgressFill"></div>
+    </div>
+
+    <nav class="toc-nav" id="tocNav">
+      {tocTree.length > 0 ? (
+        <ul class="toc-list toc-root-list" id="tocRootList">
+          {tocTree.map((node) => (
+            <li class={`toc-node toc-level-${node.depth}`} data-depth={node.depth}>
+              <div class="toc-item-row">
+                <a href={`#${node.slug}`} class="toc-link" data-target={node.slug} title={node.text}>
+                  <span class="toc-link-text">{node.text}</span>
+                </a>
+                {node.children.length > 0 && (
+                  <button type="button" class="toc-fold-btn" aria-label="折叠或展开子标题" title="折叠/展开">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4.5 6L8 9.5 11.5 6" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+              {node.children.length > 0 && (
+                <ul class="toc-list toc-sublist">
+                  {node.children.map((child) => (
+                    <li class={`toc-node toc-level-${child.depth}`} data-depth={child.depth}>
+                      <div class="toc-item-row">
+                        <a href={`#${child.slug}`} class="toc-link" data-target={child.slug} title={child.text}>
+                          <span class="toc-link-text">{child.text}</span>
+                        </a>
+                        {child.children.length > 0 && (
+                          <button type="button" class="toc-fold-btn" aria-label="折叠或展开子标题" title="折叠/展开">
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M4.5 6L8 9.5 11.5 6" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                      {child.children.length > 0 && (
+                        <ul class="toc-list toc-sublist">
+                          {child.children.map((grandChild) => (
+                            <li class={`toc-node toc-level-${grandChild.depth}`} data-depth={grandChild.depth}>
+                              <div class="toc-item-row">
+                                <a href={`#${grandChild.slug}`} class="toc-link" data-target={grandChild.slug} title={grandChild.text}>
+                                  <span class="toc-link-text">{grandChild.text}</span>
+                                </a>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul class="toc-list toc-root-list" id="tocRootList"></ul>
+      )}
+    </nav>
+  </aside>
+</div>
+
+<script>
+  (function () {
+    var wrapper = document.getElementById('tocWrapper');
+    var sidebar = document.getElementById('tocSidebar');
+    var expandBtn = document.getElementById('tocExpandBtn');
+    var collapseBtn = document.getElementById('tocCollapseBtn');
+    var foldAllBtn = document.getElementById('tocFoldAllBtn');
+    var backdrop = document.getElementById('tocBackdrop');
+    var rootList = document.getElementById('tocRootList');
+    var tocNav = document.getElementById('tocNav');
+    var progressFill = document.getElementById('tocProgressFill');
+    var progressText = document.getElementById('tocProgressText');
+    var triggerProgress = document.getElementById('tocTriggerProgress');
+
+    if (!wrapper || !sidebar || !rootList) return;
+
+    // 1. 扫描正文中的 h1, h2, h3 标题，确保每个标题都有唯一 id，并在需要时动态补充目录
+    var contentEl = document.querySelector('.post-content');
+    var headingElements = contentEl
+      ? Array.prototype.slice.call(contentEl.querySelectorAll('h1, h2, h3'))
+      : [];
+
+    var usedIds = {};
+    headingElements.forEach(function (el, idx) {
+      var id = el.getAttribute('id');
+      if (!id) {
+        var rawText = (el.textContent || '').trim();
+        var slug = rawText
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^\w\u4e00-\u9fa5\-]/g, '');
+        id = slug || 'heading-' + (idx + 1);
+        if (usedIds[id]) {
+          usedIds[id]++;
+          id = id + '-' + usedIds[id];
+        } else {
+          usedIds[id] = 1;
+        }
+        el.setAttribute('id', id);
+      } else {
+        usedIds[id] = (usedIds[id] || 0) + 1;
+      }
+    });
+
+    // 如果正文没有标题，则隐藏目录组件
+    if (headingElements.length === 0) {
+      wrapper.style.display = 'none';
+      return;
+    }
+
+    // 如果构建期未生成目录（例如纯 HTML 标题），客户端自动构建 1、2、3 级目录树
+    if (rootList.children.length === 0 && headingElements.length > 0) {
+      var items = headingElements.map(function (el) {
+        var tag = el.tagName.toLowerCase();
+        var depth = tag === 'h1' ? 1 : tag === 'h2' ? 2 : 3;
+        return {
+          depth: depth,
+          slug: el.getAttribute('id'),
+          text: (el.textContent || '').trim(),
+          children: []
+        };
+      });
+
+      var roots = [];
+      var stack = [];
+      items.forEach(function (node) {
+        while (stack.length > 0 && stack[stack.length - 1].depth >= node.depth) {
+          stack.pop();
+        }
+        if (stack.length === 0) {
+          roots.push(node);
+        } else {
+          stack[stack.length - 1].children.push(node);
+        }
+        stack.push(node);
+      });
+
+      function renderNodes(nodes) {
+        return nodes
+          .map(function (n) {
+            var hasChildren = n.children && n.children.length > 0;
+            var foldBtnHtml = hasChildren
+              ? '<button type="button" class="toc-fold-btn" aria-label="折叠或展开子标题" title="折叠/展开">' +
+                '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+                '<path d="M4.5 6L8 9.5 11.5 6" /></svg></button>'
+              : '';
+            var subHtml = hasChildren
+              ? '<ul class="toc-list toc-sublist">' + renderNodes(n.children) + '</ul>'
+              : '';
+            var safeText = n.text
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;');
+            return (
+              '<li class="toc-node toc-level-' +
+              n.depth +
+              '" data-depth="' +
+              n.depth +
+              '">' +
+              '<div class="toc-item-row">' +
+              '<a href="#' +
+              n.slug +
+              '" class="toc-link" data-target="' +
+              n.slug +
+              '" title="' +
+              safeText +
+              '">' +
+              '<span class="toc-link-text">' +
+              safeText +
+              '</span></a>' +
+              foldBtnHtml +
+              '</div>' +
+              subHtml +
+              '</li>'
+            );
+          })
+          .join('');
+      }
+
+      rootList.innerHTML = renderNodes(roots);
+    }
+
+    // 2. 侧边栏整体展开 / 折叠状态管理
+    var DESKTOP_BREAKPOINT = 1180;
+    var savedCollapsed = localStorage.getItem('bitterblog_toc_collapsed');
+    var isCollapsed;
+
+    if (window.innerWidth < DESKTOP_BREAKPOINT) {
+      isCollapsed = true;
+    } else if (savedCollapsed !== null) {
+      isCollapsed = savedCollapsed === '1';
+    } else {
+      isCollapsed = false;
+    }
+
+    function applySidebarState(collapsed, persist) {
+      isCollapsed = collapsed;
+      if (collapsed) {
+        sidebar.classList.add('collapsed');
+        if (expandBtn) expandBtn.classList.add('visible');
+        if (backdrop) backdrop.classList.remove('open');
+        document.body.classList.remove('toc-expanded');
+      } else {
+        sidebar.classList.remove('collapsed');
+        if (expandBtn) expandBtn.classList.remove('visible');
+        if (window.innerWidth < 768 && backdrop) {
+          backdrop.classList.add('open');
+        }
+        document.body.classList.add('toc-expanded');
+      }
+      if (persist && window.innerWidth >= DESKTOP_BREAKPOINT) {
+        localStorage.setItem('bitterblog_toc_collapsed', collapsed ? '1' : '0');
+      }
+    }
+
+    applySidebarState(isCollapsed, false);
+
+    if (collapseBtn) {
+      collapseBtn.addEventListener('click', function () {
+        applySidebarState(true, true);
+      });
+    }
+
+    if (expandBtn) {
+      expandBtn.addEventListener('click', function () {
+        applySidebarState(false, true);
+      });
+    }
+
+    if (backdrop) {
+      backdrop.addEventListener('click', function () {
+        applySidebarState(true, false);
+      });
+    }
+
+    // 3. 子标题树形折叠 / 展开
+    var foldBtns = wrapper.querySelectorAll('.toc-fold-btn');
+    foldBtns.forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var li = btn.closest('.toc-node');
+        if (li) {
+          li.classList.toggle('folded');
+          syncFoldAllState();
+        }
+      });
+    });
+
+    function syncFoldAllState() {
+      if (!foldAllBtn) return;
+      var parentNodes = wrapper.querySelectorAll('.toc-node:has(> .toc-sublist)');
+      if (!parentNodes.length) return;
+      var allFolded = Array.prototype.every.call(parentNodes, function (node) {
+        return node.classList.contains('folded');
+      });
+      foldAllBtn.setAttribute('data-folded', allFolded ? 'true' : 'false');
+      foldAllBtn.setAttribute('title', allFolded ? '展开全部子章节' : '折叠全部子章节');
+    }
+
+    if (foldAllBtn) {
+      foldAllBtn.addEventListener('click', function () {
+        var currentlyFolded = foldAllBtn.getAttribute('data-folded') === 'true';
+        var nextFolded = !currentlyFolded;
+        var allNodesWithSub = wrapper.querySelectorAll('.toc-node');
+        allNodesWithSub.forEach(function (node) {
+          if (node.querySelector(':scope > .toc-sublist')) {
+            node.classList.toggle('folded', nextFolded);
+          }
+        });
+        foldAllBtn.setAttribute('data-folded', nextFolded ? 'true' : 'false');
+        foldAllBtn.setAttribute('title', nextFolded ? '展开全部子章节' : '折叠全部子章节');
+      });
+    }
+
+    // 4. 点击目录项平滑滚动定位
+    var tocLinks = Array.prototype.slice.call(wrapper.querySelectorAll('.toc-link'));
+    var linkMap = {};
+    tocLinks.forEach(function (link) {
+      var targetId = link.getAttribute('data-target');
+      if (targetId) linkMap[targetId] = link;
+
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        var id = link.getAttribute('data-target');
+        var targetEl = id ? document.getElementById(id) : null;
+        if (targetEl) {
+          var navOffset = 80;
+          var top = targetEl.getBoundingClientRect().top + window.scrollY - navOffset;
+          window.scrollTo({ top: top, behavior: 'smooth' });
+          history.replaceState(null, '', '#' + id);
+          setActiveSlug(id);
+          if (window.innerWidth < 960) {
+            applySidebarState(true, false);
+          }
+        }
+      });
+    });
+
+    // 5. Scroll-Spy 滚动高亮当前标题 + 阅读进度计算
+    var activeSlug = null;
+
+    function setActiveSlug(slug) {
+      if (!slug || activeSlug === slug) return;
+      activeSlug = slug;
+
+      tocLinks.forEach(function (link) {
+        var row = link.closest('.toc-item-row');
+        var isMatch = link.getAttribute('data-target') === slug;
+        link.classList.toggle('active', isMatch);
+        if (row) row.classList.toggle('active', isMatch);
+      });
+
+      var activeLink = linkMap[slug];
+      if (activeLink && tocNav) {
+        // 如果父级节点处于折叠态，自动展开到可见范围或保持父级高亮提示
+        var parentNode = activeLink.closest('.toc-node');
+        while (parentNode) {
+          parentNode = parentNode.parentElement ? parentNode.parentElement.closest('.toc-node') : null;
+        }
+        // 让当前激活项在目录滚动容器内保持可见
+        var navRect = tocNav.getBoundingClientRect();
+        var linkRect = activeLink.getBoundingClientRect();
+        if (linkRect.top < navRect.top + 24 || linkRect.bottom > navRect.bottom - 24) {
+          tocNav.scrollTo({
+            top: tocNav.scrollTop + (linkRect.top - navRect.top) - navRect.height / 2 + linkRect.height / 2,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }
+
+    function updateOnScroll() {
+      // 更新阅读进度
+      var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      var pct = docHeight > 0 ? Math.min(100, Math.max(0, Math.round((window.scrollY / docHeight) * 100))) : 100;
+      if (progressFill) progressFill.style.width = pct + '%';
+      if (progressText) progressText.textContent = pct + '%';
+      if (triggerProgress) triggerProgress.textContent = pct + '%';
+
+      // 查找当前视口激活的标题
+      var threshold = 108;
+      var currentId = headingElements[0].getAttribute('id');
+
+      for (var i = 0; i < headingElements.length; i++) {
+        var rect = headingElements[i].getBoundingClientRect();
+        if (rect.top <= threshold) {
+          currentId = headingElements[i].getAttribute('id');
+        } else {
+          break;
+        }
+      }
+
+      if (currentId) {
+        setActiveSlug(currentId);
+      }
+    }
+
+    var ticking = false;
+    window.addEventListener(
+      'scroll',
+      function () {
+        if (!ticking) {
+          window.requestAnimationFrame(function () {
+            updateOnScroll();
+            ticking = false;
+          });
+          ticking = true;
+        }
+      },
+      { passive: true }
+    );
+
+    updateOnScroll();
+  })();
+</script>
