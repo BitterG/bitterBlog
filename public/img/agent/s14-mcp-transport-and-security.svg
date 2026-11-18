@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 420" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="header" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1e3a5f"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="760" height="420" fill="#fafbfc" rx="8"/>
+
+  <!-- 标题 -->
+  <rect x="0" y="0" width="760" height="44" fill="url(#header)" rx="8"/>
+  <rect x="0" y="36" width="760" height="8" fill="url(#header)"/>
+  <text x="380" y="28" fill="#fff" font-size="15" font-weight="700" text-anchor="middle">MCP 两段式调用链路、传输层对比与宿主零信任安全边界</text>
+
+  <!-- Row 1: 两段式调用 -->
+  <rect x="28" y="60" width="704" height="76" rx="8" fill="#f0f4ff" stroke="#2563eb" stroke-width="1.6"/>
+  <text x="380" y="80" fill="#1e3a5f" font-size="10.5" font-weight="700" text-anchor="middle">两段式调用：LLM 无法直接连端口或拉子进程，始终由 Agent Harness 做中间人</text>
+
+  <rect x="46" y="92" width="136" height="32" rx="6" fill="#fff" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="114" y="112" fill="#1e3a5f" font-size="10" font-weight="700" text-anchor="middle">LLM (AI 模型)</text>
+
+  <line x1="184" y1="108" x2="262" y2="108" stroke="#475569" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="223" y="102" fill="#475569" font-size="8" text-anchor="middle">tool_use / result</text>
+
+  <rect x="266" y="92" width="228" height="32" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="380" y="112" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">Agent Harness (内置 MCPClient)</text>
+
+  <line x1="496" y1="108" x2="574" y2="108" stroke="#475569" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="535" y="102" fill="#475569" font-size="8" text-anchor="middle">JSON-RPC 2.0</text>
+
+  <rect x="578" y="92" width="136" height="32" rx="6" fill="#fff" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="646" y="112" fill="#1e3a5f" font-size="10" font-weight="700" text-anchor="middle">MCP Server</text>
+
+  <!-- Row 2 Left: stdio -->
+  <rect x="28" y="150" width="342" height="150" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.6"/>
+  <text x="199" y="174" fill="#134e4a" font-size="11.5" font-weight="700" text-anchor="middle">stdio transport（本地子进程管道）</text>
+  <text x="46" y="198" fill="#334155" font-size="9.5">• 配置 command + args，由 Harness 拉起子进程</text>
+  <text x="46" y="218" fill="#334155" font-size="9.5">• 走匿名管道 stdin / stdout + NDJSON（零端口占用）</text>
+  <text x="46" y="238" fill="#334155" font-size="9.5">• 适用：本地 DB、本地文件、随用随起的本地 CLI</text>
+  <text x="46" y="258" fill="#334155" font-size="9.5">• 父进程退出即自动回收子进程，天然隔离</text>
+  <rect x="46" y="270" width="306" height="20" rx="4" fill="#ccfbf1"/>
+  <text x="199" y="284" fill="#115e59" font-size="8.5" font-weight="600" text-anchor="middle">⚠ Server 严禁 print() 到 stdout，日志必须走 stderr</text>
+
+  <!-- Row 2 Right: HTTP -->
+  <rect x="390" y="150" width="342" height="150" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.6"/>
+  <text x="561" y="174" fill="#312e81" font-size="11.5" font-weight="700" text-anchor="middle">HTTP transport（Streamable HTTP / SSE）</text>
+  <text x="408" y="198" fill="#334155" font-size="9.5">• 桥接已运行的桌面软件（Blender / IDE / 浏览器）</text>
+  <text x="408" y="218" fill="#334155" font-size="9.5">• 接入远程云端 SaaS（GitHub / Notion / Linear）</text>
+  <text x="408" y="238" fill="#334155" font-size="9.5">• 跨容器 / 多客户端共享同一个常驻服务状态</text>
+  <text x="408" y="258" fill="#334155" font-size="9.5">• 用户端只需填 URL，免去本机配 Python/Node 门槛</text>
+  <rect x="408" y="270" width="306" height="20" rx="4" fill="#e0e7ff"/>
+  <text x="561" y="284" fill="#312e81" font-size="8.5" font-weight="600" text-anchor="middle">⚠ 需关注绑定地址（127.0.0.1）与 OAuth / Token 鉴权</text>
+
+  <!-- Row 3: s14 宿主安全与工程护栏 -->
+  <rect x="28" y="314" width="704" height="90" rx="8" fill="#fff1f2" stroke="#dc2626" stroke-width="1.6"/>
+  <text x="380" y="336" fill="#991b1b" font-size="11" font-weight="700" text-anchor="middle">s14 宿主侧工具组装与零信任安全护栏</text>
+
+  <rect x="46" y="346" width="212" height="46" rx="5" fill="#fff" stroke="#fca5a5" stroke-width="1"/>
+  <text x="152" y="364" fill="#991b1b" font-size="9.5" font-weight="700" text-anchor="middle">命名规范化与碰撞校验</text>
+  <text x="152" y="381" fill="#475569" font-size="8.5" text-anchor="middle">防 docs.one 与 docs_one 撞名 &amp; 64 字限制</text>
+
+  <rect x="274" y="346" width="212" height="46" rx="5" fill="#fff" stroke="#fca5a5" stroke-width="1"/>
+  <text x="380" y="364" fill="#991b1b" font-size="9.5" font-weight="700" text-anchor="middle">闭包绑定防参数调包</text>
+  <text x="380" y="381" fill="#475569" font-size="8.5" text-anchor="middle">锁死 (client, raw_name)，防传入 tool 键篡改</text>
+
+  <rect x="502" y="346" width="212" height="46" rx="5" fill="#fff" stroke="#fca5a5" stroke-width="1"/>
+  <text x="608" y="364" fill="#991b1b" font-size="9.5" font-weight="700" text-anchor="middle">零信任 MCP_HOST_POLICY</text>
+  <text x="608" y="381" fill="#475569" font-size="8.5" text-anchor="middle">不盲信 readOnlyHint，未配置默认 confirm</text>
+</svg>

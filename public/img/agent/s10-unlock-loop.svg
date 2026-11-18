@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 410" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="header" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1e3a5f"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+    <marker id="arrow-teal" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0d9488"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/>
+    </marker>
+  </defs>
+
+  <rect width="760" height="410" fill="#fafbfc" rx="8"/>
+
+  <!-- 标题 -->
+  <rect x="0" y="0" width="760" height="44" fill="url(#header)" rx="8"/>
+  <rect x="0" y="36" width="760" height="8" fill="url(#header)"/>
+  <text x="380" y="28" fill="#fff" font-size="15" font-weight="700" text-anchor="middle">任务完成后，下游任务如何被感知？（s10 单 Agent vs s13 团队模式）</text>
+
+  <!-- 左侧：s10 单线程单 Agent -->
+  <rect x="28" y="64" width="338" height="278" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.8"/>
+  <text x="197" y="88" fill="#134e4a" font-size="11.5" font-weight="700" text-anchor="middle">s10 单线程单 Agent：同步扫表 + 下一轮决策</text>
+
+  <rect x="46" y="106" width="302" height="44" rx="6" fill="#fff" stroke="#0d9488" stroke-width="1.2"/>
+  <text x="197" y="125" fill="#134e4a" font-size="10.5" font-weight="700" text-anchor="middle">① 调用 complete_task(task_id)</text>
+  <text x="197" y="141" fill="#475569" font-size="9" text-anchor="middle">校验 owner 与状态后，将任务写盘为 completed</text>
+
+  <line x1="197" y1="150" x2="197" y2="168" stroke="#0d9488" stroke-width="1.5" marker-end="url(#arrow-teal)"/>
+
+  <rect x="46" y="170" width="302" height="44" rx="6" fill="#fff" stroke="#0d9488" stroke-width="1.2"/>
+  <text x="197" y="189" fill="#134e4a" font-size="10.5" font-weight="700" text-anchor="middle">② 现场调用 list_tasks() + can_start()</text>
+  <text x="197" y="205" fill="#475569" font-size="9" text-anchor="middle">动态检查 blockedBy 是否全完成，找出刚解锁任务</text>
+
+  <line x1="197" y1="214" x2="197" y2="232" stroke="#0d9488" stroke-width="1.5" marker-end="url(#arrow-teal)"/>
+
+  <rect x="46" y="234" width="302" height="44" rx="6" fill="#fff" stroke="#0d9488" stroke-width="1.2"/>
+  <text x="197" y="253" fill="#134e4a" font-size="10.5" font-weight="700" text-anchor="middle">③ tool_result 返回 "Unblocked: ..."</text>
+  <text x="197" y="269" fill="#475569" font-size="9" text-anchor="middle">塞回 messages[]，agent_loop 进入下一轮 while True</text>
+
+  <line x1="197" y1="278" x2="197" y2="296" stroke="#0d9488" stroke-width="1.5" marker-end="url(#arrow-teal)"/>
+
+  <rect x="46" y="298" width="302" height="30" rx="6" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.2"/>
+  <text x="197" y="317" fill="#115e59" font-size="10" font-weight="700" text-anchor="middle">④ 下一轮由 LLM 决定是否 claim_task 接手</text>
+
+  <!-- 右侧：s13 多 Agent 团队 -->
+  <rect x="394" y="64" width="338" height="278" rx="10" fill="#f0f4ff" stroke="#2563eb" stroke-width="1.8"/>
+  <text x="563" y="88" fill="#1e3a5f" font-size="11.5" font-weight="700" text-anchor="middle">s13 多 Agent 团队：抢单与唤醒两条路解耦</text>
+
+  <rect x="412" y="106" width="302" height="62" rx="6" fill="#fff" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="563" y="125" fill="#1e40af" font-size="10.5" font-weight="700" text-anchor="middle">路线 A：抢单靠短周期轮询（owner 为 null）</text>
+  <text x="563" y="142" fill="#475569" font-size="9" text-anchor="middle">空闲队友每 2s 扫一次 .tasks/ 任务板</text>
+  <text x="563" y="157" fill="#475569" font-size="9" text-anchor="middle">发现 ready task → task_store_lock() 原子认领</text>
+
+  <rect x="412" y="182" width="302" height="62" rx="6" fill="#fff" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="563" y="201" fill="#1e40af" font-size="10.5" font-weight="700" text-anchor="middle">路线 B：汇报与点名靠事件唤醒（已知收件人）</text>
+  <text x="563" y="218" fill="#475569" font-size="9" text-anchor="middle">队友向 Lead 汇报 result / idle_notification</text>
+  <text x="563" y="233" fill="#475569" font-size="9" text-anchor="middle">写 .mailboxes/*.jsonl + Condition 立即唤醒</text>
+
+  <rect x="412" y="258" width="302" height="70" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="563" y="278" fill="#1e3a8a" font-size="10.5" font-weight="700" text-anchor="middle">关键边界（s10 与 s13 共同遵守）</text>
+  <text x="563" y="296" fill="#1e40af" font-size="9" text-anchor="middle">• 不删除 blockedBy 数组，完整保留 DAG 历史拓扑</text>
+  <text x="563" y="313" fill="#1e40af" font-size="9" text-anchor="middle">• Harness 只维护状态，何时完成仍由 LLM 判断</text>
+
+  <!-- 底部总结 -->
+  <rect x="28" y="356" width="704" height="38" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="380" y="379" fill="#334155" font-size="10" font-weight="600" text-anchor="middle">.tasks/*.json 只是被动保存在磁盘上的数据文件，不是后台活着的线程；控制权始终留在 agent_loop 与模型手里。</text>
+</svg>

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 390" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="header" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1e3a5f"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/>
+    </marker>
+  </defs>
+
+  <rect width="760" height="390" fill="#fafbfc" rx="8"/>
+
+  <!-- 标题 -->
+  <rect x="0" y="0" width="760" height="44" fill="url(#header)" rx="8"/>
+  <rect x="0" y="36" width="760" height="8" fill="url(#header)"/>
+  <text x="380" y="28" fill="#fff" font-size="15" font-weight="700" text-anchor="middle">为什么 s11 不会主动唤醒，而 s15 产品级 Harness 可以？</text>
+
+  <!-- 左侧：s11 教学版 -->
+  <rect x="28" y="64" width="338" height="260" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="1.8"/>
+  <text x="197" y="88" fill="#9a3412" font-size="11.5" font-weight="700" text-anchor="middle">s11 教学版：纯内存队列 + 下次输入顺手收集</text>
+
+  <rect x="46" y="106" width="302" height="44" rx="6" fill="#fff" stroke="#ea580c" stroke-width="1.2"/>
+  <text x="197" y="125" fill="#9a3412" font-size="10.5" font-weight="700" text-anchor="middle">① 本轮无 tool_use → 直接 return</text>
+  <text x="197" y="141" fill="#475569" font-size="9" text-anchor="middle">不阻塞等待子线程，直接退回 input("s11 >> ")</text>
+
+  <line x1="197" y1="150" x2="197" y2="164" stroke="#ea580c" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+
+  <rect x="46" y="166" width="302" height="50" rx="6" fill="#fff" stroke="#ea580c" stroke-width="1.2"/>
+  <text x="197" y="185" fill="#9a3412" font-size="10.5" font-weight="700" text-anchor="middle">② daemon=True 子线程执行结束</text>
+  <text x="197" y="201" fill="#475569" font-size="9" text-anchor="middle">结果存入 results / _ready 内存队列后静默候着</text>
+  <text x="197" y="212" fill="#94a3b8" font-size="8" text-anchor="middle">既不主动调 LLM，也不打印提示</text>
+
+  <line x1="197" y1="216" x2="197" y2="230" stroke="#ea580c" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+
+  <rect x="46" y="232" width="302" height="46" rx="6" fill="#fff" stroke="#ea580c" stroke-width="1.2"/>
+  <text x="197" y="251" fill="#9a3412" font-size="10.5" font-weight="700" text-anchor="middle">③ 用户下次输入新消息进入 agent_loop</text>
+  <text x="197" y="267" fill="#475569" font-size="9" text-anchor="middle">inject_background_results() 拼成 &lt;task_notification&gt;</text>
+
+  <rect x="46" y="288" width="302" height="24" rx="4" fill="#ffedd5" stroke="#fb923c" stroke-width="1"/>
+  <text x="197" y="304" fill="#9a3412" font-size="8.5" font-weight="600" text-anchor="middle">不落盘状态 · 退出即停止后台进程组并清零</text>
+
+  <!-- 右侧：s15 集成版 -->
+  <rect x="394" y="64" width="338" height="260" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.8"/>
+  <text x="563" y="88" fill="#166534" font-size="11.5" font-weight="700" text-anchor="middle">s15 集成版：async_event_loop 主动唤醒响应</text>
+
+  <rect x="412" y="106" width="302" height="44" rx="6" fill="#fff" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="563" y="125" fill="#166534" font-size="10.5" font-weight="700" text-anchor="middle">① 独立唤醒线程每秒巡检事件源</text>
+  <text x="563" y="141" fill="#475569" font-size="9" text-anchor="middle">检查 has_pending_background() / cron / inbox</text>
+
+  <line x1="563" y1="150" x2="563" y2="164" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+  <rect x="412" y="166" width="302" height="50" rx="6" fill="#fff" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="563" y="185" fill="#166534" font-size="10.5" font-weight="700" text-anchor="middle">② 抢占 agent_lock 互斥锁</text>
+  <text x="563" y="201" fill="#475569" font-size="9" text-anchor="middle">防止后台线程和用户输入并发改写 history[]</text>
+  <text x="563" y="212" fill="#94a3b8" font-size="8" text-anchor="middle">强依赖场景则配阻塞查询或 Stop 门控</text>
+
+  <line x1="563" y1="216" x2="563" y2="230" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+  <rect x="412" y="232" width="302" height="46" rx="6" fill="#fff" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="563" y="251" fill="#166534" font-size="10.5" font-weight="700" text-anchor="middle">③ 自动拉起一轮新的 agent_loop()</text>
+  <text x="563" y="267" fill="#475569" font-size="9" text-anchor="middle">收集 &lt;task_notification&gt; 并主动向用户汇报</text>
+
+  <rect x="412" y="288" width="302" height="24" rx="4" fill="#dcfce7" stroke="#4ade80" stroke-width="1"/>
+  <text x="563" y="304" fill="#166534" font-size="8.5" font-weight="600" text-anchor="middle">ConsoleBroker / terminal_print 擦除并重绘输入行</text>
+
+  <!-- 底部说明 -->
+  <rect x="28" y="338" width="704" height="36" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="380" y="360" fill="#475569" font-size="10" font-weight="600" text-anchor="middle">为保持教学纯粹性，s11 把并发锁与终端重绘留白（inject_background_results 预留分支），在 s13 / s15 才真正接通自动唤醒。</text>
+</svg>

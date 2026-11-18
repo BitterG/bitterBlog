@@ -43,8 +43,8 @@ export const MAJOR_CATEGORIES: MajorCategory[] = [
     shortName: 'Agent 原理',
     eyebrow: 'CLAUDE CODE HARNESS',
     glyph: 'AG',
-    description: '从零拆解 Claude Code 核心实现原理：Agent 主循环、工具调用、权限审查、Hooks、Todo 提醒、Subagent、Skill 按需加载、上下文压缩与持久记忆。',
-    topics: ['Agent Loop', 'Tool & Permission', 'Hooks & Todo', 'Subagent & Skill', 'Compact & Memory'],
+    description: '从零拆解 Claude Code 核心实现原理：Agent 主循环、工具与权限、Hooks、Todo、Subagent、Skill、上下文压缩、持久记忆、任务图、后台/定时调度、多 Agent 团队与 MCP 接入。',
+    topics: ['Agent Loop', 'Context & Memory', 'Task & Cron', 'Agent Teams', 'MCP Tools'],
   },
   {
     id: 'frida',
