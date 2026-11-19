@@ -35,7 +35,14 @@ export async function getStaticPaths() {
     });
 
     if (category.id === 'agent') {
-      categoryPosts.sort((a, b) => a.slug.localeCompare(b.slug));
+      const extractNum = (slug: string) => {
+        const m = slug.match(/^claude-code-s(\d+)-/);
+        return m ? parseInt(m[1], 10) : Number.MAX_SAFE_INTEGER;
+      };
+      categoryPosts.sort((a, b) => {
+        const diff = extractNum(a.slug) - extractNum(b.slug);
+        return diff !== 0 ? diff : a.slug.localeCompare(b.slug);
+      });
     }
 
     // Include the Steam ID tool card if category is 'projects' or 'game'

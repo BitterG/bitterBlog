@@ -79,7 +79,14 @@ const totalCount = allPosts.length;
 const categoryGroups = MAJOR_CATEGORIES.map((cat) => {
   const matchedPosts = allPosts.filter((p) => p.majorCatIds.includes(cat.id));
   if (cat.id === 'agent') {
-    matchedPosts.sort((a, b) => a.slug.localeCompare(b.slug));
+    const extractNum = (slug: string) => {
+      const m = slug.match(/^claude-code-s(\d+)-/);
+      return m ? parseInt(m[1], 10) : Number.MAX_SAFE_INTEGER;
+    };
+    matchedPosts.sort((a, b) => {
+      const diff = extractNum(a.slug) - extractNum(b.slug);
+      return diff !== 0 ? diff : a.slug.localeCompare(b.slug);
+    });
   }
   const crossPostsCount = matchedPosts.filter((p) => p.majorCatIds.length > 1).length;
   return {
