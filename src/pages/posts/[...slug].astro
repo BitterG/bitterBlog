@@ -60,14 +60,46 @@ const { Content, headings } = await post.render();
     <div class="post-content">
       <Content />
     </div>
-    <div class="post-back">
-      <a href="/" class="button-secondary">← 返回首页</a>
+    <div class="post-back" id="postBack">
+      {majorCats.map((cat, idx) => (
+        <a
+          href={`/categories/${cat.id}/`}
+          class={idx === 0 ? 'button-primary post-back-cat' : 'button-secondary post-back-cat'}
+          data-category-id={cat.id}
+        >
+          ← 返回 {cat.shortName} 分类
+        </a>
+      ))}
+      <a href="/" class="button-secondary">返回首页</a>
     </div>
   </article>
   <Footer />
 </BaseLayout>
 
 <script>
+  (function () {
+    var postBack = document.getElementById('postBack');
+    if (postBack && document.referrer) {
+      var refMatch = document.referrer.match(/\/categories\/([^/]+)(?:\/|$)/);
+      if (refMatch) {
+        var refCatId = refMatch[1];
+        var catLinks = Array.prototype.slice.call(postBack.querySelectorAll('.post-back-cat'));
+        var matched = catLinks.find(function (el) {
+          return el.getAttribute('data-category-id') === refCatId;
+        });
+        if (matched && catLinks[0] && matched !== catLinks[0]) {
+          catLinks.forEach(function (el) {
+            el.classList.remove('button-primary');
+            el.classList.add('button-secondary');
+          });
+          matched.classList.remove('button-secondary');
+          matched.classList.add('button-primary');
+          postBack.insertBefore(matched, postBack.firstChild);
+        }
+      }
+    }
+  })();
+
   document.querySelectorAll('.post-content pre').forEach(function(pre) {
     // 复制按钮
     var btn = document.createElement('button');

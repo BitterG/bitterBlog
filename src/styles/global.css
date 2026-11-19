@@ -1355,6 +1355,31 @@ img {
   padding-top: var(--space-3xl);
 }
 
+.button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 var(--space-lg);
+  border-radius: var(--rounded-pill);
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  transition: opacity 0.15s, background-color 0.15s;
+}
+
+.button-primary:hover {
+  opacity: 0.88;
+}
+
+.button-primary:active {
+  opacity: 0.78;
+}
+
 .button-secondary {
   display: inline-flex;
   align-items: center;
@@ -1502,7 +1527,11 @@ img {
 
 .post-back {
   margin-top: var(--space-3xl);
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
 }
 
 .post-category-link {
